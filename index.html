@@ -134,6 +134,8 @@
       throw new Error("Run fetch_playlists.py first");
     }
     const VIDEOS_DATA = window.VIDEOS_DATA;
+    // 過濾掉已失效的影片，不在網站上顯示
+    VIDEOS_DATA.videos = VIDEOS_DATA.videos.filter(v => v.status !== "unavailable");
 
     // ====== Helpers ======
     const formatHours = (sec) => {
