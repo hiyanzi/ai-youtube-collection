@@ -107,6 +107,10 @@
       pointer-events: none;
       z-index: 0;
     }
+    body { overflow-x: hidden; }
+    @media (max-width: 767px) {
+      .orb { display: none; }
+    }
   </style>
 </head>
 <body class="text-slate-800 min-h-screen">
@@ -545,6 +549,9 @@
       const [sortBy, setSortBy] = useState("date_desc");
       const [editingNote, setEditingNote] = useState(null);
       const [detailsId, setDetailsId] = useState(null);
+      const [sidebarOpen, setSidebarOpen] = useState(false);
+
+      useEffect(() => { setSidebarOpen(false); }, [activeFolder, typeFilter, statusFilter]);
 
       const [watched, setWatched] = useState(() => {
         try { return new Set(JSON.parse(localStorage.getItem("aiyt_watched") || "[]")); }
@@ -639,11 +646,28 @@
       const progressPct = stats.total > 0 ? Math.round((stats.watched / stats.total) * 100) : 0;
 
       return (
-        <div className="min-h-screen flex">
-          <aside className="w-60 glass m-3 mr-0 rounded-2xl p-4 flex flex-col gap-1 sticky top-3 h-[calc(100vh-1.5rem)] overflow-y-auto scroll-hide">
-            <div className="mb-4 px-1">
-              <h1 className="text-xl font-bold gradient-text">🎬 AI 影片庫</h1>
-              <p className="text-[10px] text-slate-500 mt-0.5 tracking-wider">MY YOUTUBE AI COLLECTION</p>
+        <div className="min-h-screen flex flex-col md:flex-row">
+          {/* Mobile Header */}
+          <div className="md:hidden glass sticky top-0 z-30 flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-2">
+              <button onClick={() => setSidebarOpen(true)} className="text-xl">☰</button>
+              <h1 className="text-lg font-bold gradient-text">🎬 AI 影片庫</h1>
+            </div>
+            <span className="text-xs text-slate-500">{stats.watched}/{stats.total}</span>
+          </div>
+
+          {/* Mobile Backdrop */}
+          {sidebarOpen && (
+            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
+          )}
+
+          <aside className={`fixed top-0 left-0 w-72 h-full z-50 glass p-4 flex flex-col gap-1 overflow-y-auto scroll-hide transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 md:w-60 md:m-3 md:mr-0 md:rounded-2xl md:sticky md:top-3 md:h-[calc(100vh-1.5rem)] md:z-10`}>
+            <div className="mb-4 px-1 flex items-center justify-between">
+              <div>
+                <h1 className="text-xl font-bold gradient-text">🎬 AI 影片庫</h1>
+                <p className="text-[10px] text-slate-500 mt-0.5 tracking-wider">MY YOUTUBE AI COLLECTION</p>
+              </div>
+              <button onClick={() => setSidebarOpen(false)} className="md:hidden text-lg text-slate-400 hover:text-slate-600 p-1">✕</button>
             </div>
 
             <div className="text-[10px] text-slate-500 px-3 mb-1 mt-1 tracking-wider uppercase font-semibold">資料夾</div>
@@ -689,7 +713,7 @@
             </div>
           </aside>
 
-          <main className="flex-1 p-6 max-w-[1600px]">
+          <main className="flex-1 p-3 md:p-6 max-w-[1600px]">
             <div className="flex flex-wrap gap-3 items-center mb-6">
               <div className="relative flex-1 min-w-[240px]">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
