@@ -1,0 +1,15 @@
+{
+  "_說明": [
+    "把你的 YouTube 播放清單 URL 列在 playlists 陣列裡",
+    "支援兩種格式：純字串 URL，或物件（可自訂 folder 名稱）",
+    "請複製這個檔案成 config.json 後再修改"
+  ],
+  "playlists": [
+    "https://www.youtube.com/playlist?list=PLxxxxxxxxxxxxxxxxxxxxxxx",
+    "https://www.youtube.com/playlist?list=PLyyyyyyyyyyyyyyyyyyyyy",
+    {
+      "url": "https://www.youtube.com/playlist?list=PLzzzzzzzzzzzzzzz",
+      "name": "我自己改名的資料夾（會覆蓋 YouTube 上的清單名）"
+    }
+  ]
+}

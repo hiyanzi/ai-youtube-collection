@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI YouTube 影片收藏</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- 影片資料：由 fetch_playlists.py / summarize.py 自動產生 -->
+  <script src="./data/videos.js"></script>
+  <style>
+    /* =====================================================================
+       配色主題 — 改這裡換整體顏色，不用翻 HTML 其他地方
+       ===================================================================== */
+    :root {
+      --orb-left-color:  #7dd3fc;               /* 左上背景光暈 (sky-300) */
+      --orb-right-color: #c4b5fd;               /* 右下背景光暈 (violet-300) */
+
+      --bg-blob-1: rgba(186, 230, 253, 0.50);   /* 背景漸層 blob 1 (sky) */
+      --bg-blob-2: rgba(221, 214, 254, 0.50);   /* 背景漸層 blob 2 (violet) */
+      --bg-blob-3: rgba(207, 250, 254, 0.40);   /* 背景漸層 blob 3 (cyan) */
+
+      --gradient-text-from: #0284c7;            /* 標題漸層起點 (sky-700) */
+      --gradient-text-to:   #7c3aed;            /* 標題漸層終點 (violet-700) */
+
+      --gradient-bar-from:  #38bdf8;            /* 進度條漸層起點 (sky-400) */
+      --gradient-bar-to:    #a78bfa;            /* 進度條漸層終點 (violet-400) */
+
+      --card-hover-border:  rgba(125, 211, 252, 0.60);           /* 卡片 hover 邊框 */
+      --card-hover-shadow:  rgba(56, 189, 248, 0.12), rgba(56, 189, 248, 0.18); /* 卡片 hover 陰影 */
+    }
+    /* ===================================================================== */
+
+    body {
+      font-family: "Inter", "Noto Sans TC", system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 0%,   var(--bg-blob-1), transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 30%,  var(--bg-blob-2), transparent 60%),
+        radial-gradient(ellipse 70% 50% at 50% 100%, var(--bg-blob-3), transparent 60%),
+        linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+    .scroll-hide::-webkit-scrollbar { width: 6px; }
+    .scroll-hide::-webkit-scrollbar-track { background: transparent; }
+    .scroll-hide::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.4); border-radius: 3px; }
+    .scroll-hide::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.6); }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(16px) saturate(160%);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 8px 24px -12px rgba(15, 23, 42, 0.08);
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px) saturate(150%);
+      -webkit-backdrop-filter: blur(12px) saturate(150%);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px -8px rgba(15, 23, 42, 0.08);
+    }
+    .glass-card:hover {
+      background: rgba(255, 255, 255, 0.92);
+      border-color: var(--card-hover-border);
+      box-shadow: 0 4px 12px var(--card-hover-shadow);
+    }
+
+    .video-card { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+    .video-card:hover { transform: translateY(-3px); }
+    .watched-card { opacity: 0.55; filter: grayscale(0.5); }
+    .watched-card:hover { opacity: 0.88; filter: grayscale(0.1); }
+
+    .gradient-text {
+      background: linear-gradient(135deg, var(--gradient-text-from) 0%, var(--gradient-text-to) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .gradient-bar { background: linear-gradient(90deg, var(--gradient-bar-from) 0%, var(--gradient-bar-to) 100%); }
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .line-clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 0;
+    }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen">
+  <div class="orb" style="width: 400px; height: 400px; background: var(--orb-left-color);  top: -100px; left: -100px;"></div>
+  <div class="orb" style="width: 500px; height: 500px; background: var(--orb-right-color); bottom: -150px; right: -100px;"></div>
+
+  <div id="root" class="relative z-10"></div>
+
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect, useMemo } = React;
+
+    // ====== 資料：載自 data/videos.js（由 fetch_playlists.py + summarize.py 產生）======
+    if (!window.VIDEOS_DATA) {
+      document.getElementById("root").innerHTML =
+        '<div style="padding:60px;text-align:center;font-family:sans-serif;color:#475569">' +
+        '<div style="font-size:48px;margin-bottom:16px">⚠️</div>' +
+        '<h2 style="font-size:20px;margin-bottom:8px">尚未產生影片資料</h2>' +
+        '<p style="margin-bottom:16px">請先執行：</p>' +
+        '<code style="background:#0f172a;color:#f1f5f9;padding:8px 16px;border-radius:8px">python scripts/fetch_playlists.py</code>' +
+        '</div>';
+      throw new Error("Run fetch_playlists.py first");
+    }
+    const VIDEOS_DATA = window.VIDEOS_DATA;
+
+    // ====== Helpers ======
+    const formatHours = (sec) => {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      return h > 0 ? `${h} 小時 ${m} 分` : `${m} 分`;
+    };
+
+    const CONTENT_TYPE_META = {
+      production_case: { label: "公司案例", emoji: "🏢", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+      tutorial:        { label: "實戰教學", emoji: "📚", color: "bg-sky-50 text-sky-700 border-sky-200" },
+      demo:            { label: "工具展示", emoji: "🎬", color: "bg-violet-50 text-violet-700 border-violet-200" },
+      theory:          { label: "理論講解", emoji: "🧠", color: "bg-amber-50 text-amber-700 border-amber-200" },
+      news:            { label: "新聞", emoji: "📰", color: "bg-slate-100 text-slate-600 border-slate-200" },
+      discussion:      { label: "討論雜談", emoji: "💬", color: "bg-rose-50 text-rose-700 border-rose-200" },
+    };
+
+    const SIGNAL_META = {
+      discusses_cost:          { label: "成本", icon: "💰" },
+      discusses_latency:       { label: "延遲", icon: "⚡" },
+      discusses_reliability:   { label: "可靠性", icon: "🛡" },
+      discusses_evaluation:    { label: "評估方法", icon: "📊" },
+      discusses_failure_modes: { label: "失敗案例", icon: "🔥" },
+    };
+
+    const scoreColor = (score) => {
+      if (score == null) return "bg-slate-100 text-slate-500 border-slate-200";
+      if (score >= 8) return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      if (score >= 5) return "bg-sky-50 text-sky-700 border-sky-200";
+      return "bg-slate-100 text-slate-500 border-slate-200";
+    };
+
+    // ====== Components ======
+    function SidebarItem({ icon, label, count, active, onClick }) {
+      return (
+        <button
+          onClick={onClick}
+          className={`w-full text-left px-3 py-2 rounded-lg flex items-center justify-between transition-all ${
+            active
+              ? "bg-gradient-to-r from-sky-100/90 to-violet-100/60 text-sky-700 shadow-sm border border-sky-200/60"
+              : "hover:bg-white/60 text-slate-600 border border-transparent"
+          }`}
+        >
+          <span className="flex items-center gap-2 min-w-0">
+            <span className="shrink-0">{icon}</span>
+            <span className="text-sm truncate font-medium">{label}</span>
+          </span>
+          <span className={`text-xs shrink-0 ml-2 ${active ? "text-sky-600" : "text-slate-400"}`}>{count}</span>
+        </button>
+      );
+    }
+
+    function ProductionSignals({ signals }) {
+      if (!signals) return null;
+      return (
+        <div className="flex gap-1.5">
+          {Object.entries(SIGNAL_META).map(([key, meta]) => {
+            const on = signals[key];
+            return (
+              <span
+                key={key}
+                title={`${meta.label}：${on ? "✓ 影片有討論" : "未提及"}`}
+                className={`text-xs leading-none transition ${on ? "opacity-100" : "opacity-25 grayscale"}`}
+              >
+                {meta.icon}
+              </span>
+            );
+          })}
+        </div>
+      );
+    }
+
+    function VideoCard({ video, isWatched, onToggleWatched, onOpenNotes, hasNote, onOpenDetails }) {
+      const isUnavailable = video.status === "unavailable";
+      const cardCls = isWatched ? "watched-card" : "";
+      const ct = CONTENT_TYPE_META[video.content_type];
+      const score = video.practicality_score;
+      const hasSummary = !!video.summary;
+
+      return (
+        <div className={`video-card glass-card rounded-2xl overflow-hidden flex flex-col ${cardCls}`}>
+          {/* 縮圖 */}
+          <div
+            className={`relative aspect-video bg-slate-100 ${!isUnavailable ? "cursor-pointer group" : ""}`}
+            onClick={() => !isUnavailable && window.open(video.url, "_blank")}
+          >
+            {!isUnavailable ? (
+              <img
+                src={video.thumbnail}
+                alt={video.title}
+                className="w-full h-full object-cover"
+                onError={(e) => { e.target.style.opacity = 0.15; }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-5xl text-slate-300">🚫</div>
+            )}
+
+            {video.duration && (
+              <span className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-slate-900/80 text-white text-xs rounded backdrop-blur-sm">
+                {video.duration}
+              </span>
+            )}
+            {isWatched && (
+              <div className="absolute top-2 right-2 bg-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-medium shadow-md">
+                ✓ 已看
+              </div>
+            )}
+            {isUnavailable && (
+              <div className="absolute top-2 left-2 bg-rose-500/90 text-white text-xs px-2 py-0.5 rounded backdrop-blur-sm">
+                已失效
+              </div>
+            )}
+            {!isUnavailable && (
+              <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                <div className="bg-red-600 text-white px-4 py-2 rounded-full flex items-center gap-1.5 font-medium text-sm shadow-lg">
+                  ▶ 開 YouTube
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 內容區 */}
+          <div className="p-3 space-y-2 flex-1 flex flex-col">
+            {/* AI 徽章列 */}
+            {(ct || score != null) && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {ct && (
+                  <span className={`text-[10px] px-2 py-0.5 rounded-md border font-medium ${ct.color}`}>
+                    {ct.emoji} {ct.label}
+                  </span>
+                )}
+                {score != null && (
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-md border font-semibold ${scoreColor(score)}`}
+                    title="動手可行度（落地實作度）：照影片做能複製出來的程度"
+                  >
+                    🔧 落地 {score}/10
+                  </span>
+                )}
+                {video.has_code && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200" title="影片有 code/實作">
+                    💻
+                  </span>
+                )}
+                {video.has_real_company_case && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200" title="真實公司案例">
+                    🏢{video.company_mentioned ? ` ${video.company_mentioned}` : ""}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* 標題 */}
+            <h3 className="text-sm font-semibold leading-snug line-clamp-2 min-h-[2.5rem] text-slate-800">
+              {video.title}
+            </h3>
+
+            {/* 頻道 + 日期 */}
+            <div className="text-xs text-slate-500 flex items-center gap-1.5 truncate">
+              <span className="truncate">{video.channel || "—"}</span>
+              <span>·</span>
+              <span className="shrink-0">{video.publishedAt || "—"}</span>
+            </div>
+
+            {/* AI 摘要 */}
+            {hasSummary && (
+              <p className="text-xs text-slate-600 leading-relaxed line-clamp-3 cursor-pointer hover:text-slate-800"
+                 onClick={() => onOpenDetails(video.id)}
+                 title="點擊查看完整摘要與重點">
+                {video.summary}
+              </p>
+            )}
+
+            {/* 技術 tags */}
+            {video.tags && video.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {video.tags.slice(0, 4).map(t => (
+                  <span key={t} className="px-1.5 py-0.5 bg-sky-50 text-sky-700 text-[10px] rounded border border-sky-100 font-medium">
+                    {t}
+                  </span>
+                ))}
+                {video.tags.length > 4 && (
+                  <span className="px-1.5 py-0.5 text-[10px] text-slate-500">+{video.tags.length - 4}</span>
+                )}
+              </div>
+            )}
+
+            {/* 生產考量 + folder */}
+            <div className="flex items-center justify-between gap-2 pt-1">
+              {video.production_signals ? (
+                <ProductionSignals signals={video.production_signals} />
+              ) : <span></span>}
+              <span className="text-[10px] text-slate-400 truncate" title={video.allFolders?.join(" / ")}>
+                📁 {video.primaryFolder}
+              </span>
+            </div>
+
+            <div className="flex-1"></div>
+
+            {/* 動作按鈕 */}
+            {!isUnavailable && (
+              <div className="flex gap-1 pt-1">
+                <button
+                  onClick={() => onToggleWatched(video.id)}
+                  className={`flex-1 text-xs px-2 py-1.5 rounded-lg transition font-medium ${
+                    isWatched
+                      ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                      : "bg-white/80 text-slate-600 hover:bg-slate-50 border border-slate-200"
+                  }`}
+                >
+                  {isWatched ? "✓ 看過" : "👁 標記看過"}
+                </button>
+                {hasSummary && (
+                  <button
+                    onClick={() => onOpenDetails(video.id)}
+                    className="text-xs px-2.5 py-1.5 rounded-lg bg-white/80 text-slate-600 hover:bg-slate-50 border border-slate-200 transition"
+                    title="完整資訊"
+                  >
+                    ⓘ
+                  </button>
+                )}
+                <button
+                  onClick={() => onOpenNotes(video.id)}
+                  className={`text-xs px-2.5 py-1.5 rounded-lg transition border ${
+                    hasNote
+                      ? "bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200"
+                      : "bg-white/80 text-slate-600 hover:bg-slate-50 border-slate-200"
+                  }`}
+                  title="筆記"
+                >
+                  📝
+                </button>
+                <a
+                  href="https://notebooklm.google.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-xs px-2.5 py-1.5 rounded-lg bg-white/80 text-slate-600 hover:bg-slate-50 border border-slate-200 transition"
+                  title="在 NotebookLM 開啟"
+                >
+                  🧠
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function NoteModal({ video, currentNote, onSave, onClose }) {
+      const [text, setText] = useState(currentNote || "");
+      if (!video) return null;
+      return (
+        <div className="fixed inset-0 bg-slate-900/30 z-50 flex items-center justify-center p-4 backdrop-blur-md" onClick={onClose}>
+          <div className="glass rounded-2xl max-w-lg w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b border-slate-200/60">
+              <div className="flex items-center gap-2 mb-1">
+                <span>📝</span>
+                <h3 className="font-semibold text-slate-800">影片筆記</h3>
+              </div>
+              <p className="text-sm text-slate-600 line-clamp-2">{video.title}</p>
+            </div>
+            <div className="p-4">
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                rows={8}
+                placeholder="記下重點、心得、待辦..."
+                className="w-full bg-white/80 border border-slate-200 rounded-lg p-3 text-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100 resize-none text-slate-700"
+                autoFocus
+              />
+              <p className="text-xs text-slate-500 mt-2">支援多行。儲存後僅本機保存（localStorage）。</p>
+            </div>
+            <div className="p-4 border-t border-slate-200/60 flex justify-end gap-2">
+              <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                取消
+              </button>
+              <button
+                onClick={() => { onSave(video.id, text); onClose(); }}
+                className="px-4 py-2 text-sm bg-gradient-to-r from-sky-500 to-violet-500 text-white hover:from-sky-600 hover:to-violet-600 rounded-lg transition font-medium shadow-md"
+              >
+                儲存
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function DetailsModal({ video, onClose }) {
+      if (!video) return null;
+      const ct = CONTENT_TYPE_META[video.content_type];
+      const sig = video.production_signals || {};
+      return (
+        <div className="fixed inset-0 bg-slate-900/30 z-50 flex items-center justify-center p-4 backdrop-blur-md overflow-y-auto" onClick={onClose}>
+          <div className="glass rounded-2xl max-w-2xl w-full my-8" onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b border-slate-200/60">
+              <h3 className="font-bold text-lg text-slate-800 leading-tight">{video.title}</h3>
+              <div className="text-xs text-slate-500 mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                <span>🎙 {video.channel}</span>
+                <span>📅 {video.publishedAt}</span>
+                <span>⏱ {video.duration}</span>
+                <span>📁 {video.allFolders?.join(" / ")}</span>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-5 max-h-[70vh] overflow-y-auto scroll-hide">
+              {/* AI 標籤組 */}
+              <div className="flex flex-wrap gap-2">
+                {ct && (
+                  <span className={`text-xs px-2.5 py-1 rounded-md border font-medium ${ct.color}`}>
+                    {ct.emoji} {ct.label}
+                  </span>
+                )}
+                {video.practicality_score != null && (
+                  <span className={`text-xs px-2.5 py-1 rounded-md border font-semibold ${scoreColor(video.practicality_score)}`}>
+                    🔧 落地度 {video.practicality_score}/10
+                  </span>
+                )}
+                {video.abstraction_level && (
+                  <span className="text-xs px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+                    {video.abstraction_level === "hands_on" ? "純實作" : video.abstraction_level === "mixed" ? "理論+實作" : "純概念"}
+                  </span>
+                )}
+                {video.has_code && (
+                  <span className="text-xs px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 border border-slate-200">💻 有 code/demo</span>
+                )}
+                {video.has_real_company_case && (
+                  <span className="text-xs px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    🏢 公司案例{video.company_mentioned ? ` · ${video.company_mentioned}` : ""}
+                  </span>
+                )}
+              </div>
+
+              {/* 摘要 */}
+              {video.summary && (
+                <div>
+                  <div className="text-[11px] font-semibold text-slate-500 mb-1.5 tracking-wider uppercase">📝 摘要</div>
+                  <p className="text-sm text-slate-700 leading-relaxed">{video.summary}</p>
+                </div>
+              )}
+
+              {/* 重點 */}
+              {video.key_points?.length > 0 && (
+                <div>
+                  <div className="text-[11px] font-semibold text-slate-500 mb-1.5 tracking-wider uppercase">🎯 關鍵重點</div>
+                  <ul className="space-y-1.5">
+                    {video.key_points.map((kp, i) => (
+                      <li key={i} className="text-sm text-slate-700 flex gap-2">
+                        <span className="text-sky-500 shrink-0">•</span>
+                        <span>{kp}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* tags */}
+              {video.tags?.length > 0 && (
+                <div>
+                  <div className="text-[11px] font-semibold text-slate-500 tracking-wider uppercase mb-1.5">🏷 技術主題</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {video.tags.map(t => (
+                      <span key={t} className="px-2 py-1 bg-sky-50 text-sky-700 text-xs rounded-md border border-sky-100 font-medium">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 生產考量 */}
+              {video.production_signals && (
+                <div>
+                  <div className="text-[11px] font-semibold text-slate-500 mb-1.5 tracking-wider uppercase">⚙️ 生產考量（影片有明確討論的面向）</div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {Object.entries(SIGNAL_META).map(([key, meta]) => {
+                      const on = sig[key];
+                      return (
+                        <div key={key} className={`text-xs px-2.5 py-1.5 rounded-md border flex items-center gap-2 ${
+                          on ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-400 border-slate-200"
+                        }`}>
+                          <span className={on ? "" : "grayscale opacity-50"}>{meta.icon}</span>
+                          <span className="font-medium">{meta.label}</span>
+                          <span className="ml-auto">{on ? "✓" : "—"}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-slate-200/60 flex justify-end gap-2">
+              <a href={video.url} target="_blank" rel="noopener noreferrer"
+                 className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition font-medium">
+                ▶ 開 YouTube
+              </a>
+              <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                關閉
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [search, setSearch] = useState("");
+      const [activeFolder, setActiveFolder] = useState("all");
+      const [statusFilter, setStatusFilter] = useState("all");
+      const [typeFilter, setTypeFilter] = useState("all");
+      const [sortBy, setSortBy] = useState("date_desc");
+      const [editingNote, setEditingNote] = useState(null);
+      const [detailsId, setDetailsId] = useState(null);
+
+      const [watched, setWatched] = useState(() => {
+        try { return new Set(JSON.parse(localStorage.getItem("aiyt_watched") || "[]")); }
+        catch { return new Set(); }
+      });
+      const [notes, setNotes] = useState(() => {
+        try { return JSON.parse(localStorage.getItem("aiyt_notes") || "{}"); }
+        catch { return {}; }
+      });
+
+      useEffect(() => { localStorage.setItem("aiyt_watched", JSON.stringify([...watched])); }, [watched]);
+      useEffect(() => { localStorage.setItem("aiyt_notes", JSON.stringify(notes)); }, [notes]);
+
+      const toggleWatched = (id) => {
+        setWatched(prev => {
+          const next = new Set(prev);
+          next.has(id) ? next.delete(id) : next.add(id);
+          return next;
+        });
+      };
+
+      const saveNote = (id, text) => {
+        setNotes(prev => {
+          const next = { ...prev };
+          if (text.trim()) next[id] = text;
+          else delete next[id];
+          return next;
+        });
+      };
+
+      const folderCounts = useMemo(() => {
+        const counts = {};
+        VIDEOS_DATA.videos.forEach(v => {
+          v.allFolders?.forEach(f => { counts[f] = (counts[f] || 0) + 1; });
+        });
+        return counts;
+      }, []);
+
+      const typeCounts = useMemo(() => {
+        const counts = {};
+        VIDEOS_DATA.videos.forEach(v => {
+          if (v.content_type) counts[v.content_type] = (counts[v.content_type] || 0) + 1;
+        });
+        return counts;
+      }, []);
+
+      const filtered = useMemo(() => {
+        let list = VIDEOS_DATA.videos;
+        if (activeFolder !== "all") list = list.filter(v => v.allFolders?.includes(activeFolder));
+        if (typeFilter !== "all") list = list.filter(v => v.content_type === typeFilter);
+        if (search) {
+          const q = search.toLowerCase();
+          list = list.filter(v =>
+            v.title.toLowerCase().includes(q) ||
+            (v.channel || "").toLowerCase().includes(q) ||
+            (v.summary || "").toLowerCase().includes(q) ||
+            (v.tags || []).some(t => t.toLowerCase().includes(q))
+          );
+        }
+        if (statusFilter === "watched") list = list.filter(v => watched.has(v.id));
+        else if (statusFilter === "unwatched") list = list.filter(v => !watched.has(v.id) && v.status === "available");
+
+        return [...list].sort((a, b) => {
+          switch (sortBy) {
+            case "date_desc": return (b.publishedAt || "").localeCompare(a.publishedAt || "");
+            case "date_asc":  return (a.publishedAt || "").localeCompare(b.publishedAt || "");
+            case "duration_asc":  return (a.durationSeconds || 0) - (b.durationSeconds || 0);
+            case "duration_desc": return (b.durationSeconds || 0) - (a.durationSeconds || 0);
+            case "score_desc": return (b.practicality_score ?? -1) - (a.practicality_score ?? -1);
+            case "score_asc":  return (a.practicality_score ?? 99) - (b.practicality_score ?? 99);
+            default: return 0;
+          }
+        });
+      }, [search, activeFolder, statusFilter, typeFilter, sortBy, watched]);
+
+      const stats = useMemo(() => {
+        const av = VIDEOS_DATA.videos.filter(v => v.status === "available");
+        const w = av.filter(v => watched.has(v.id));
+        const summarized = av.filter(v => v.summary).length;
+        return {
+          total: av.length,
+          watched: w.length,
+          unwatched: av.length - w.length,
+          summarized,
+          totalSec: av.reduce((s, v) => s + (v.durationSeconds || 0), 0),
+          watchedSec: w.reduce((s, v) => s + (v.durationSeconds || 0), 0),
+        };
+      }, [watched]);
+
+      const detailsVideo = detailsId ? VIDEOS_DATA.videos.find(v => v.id === detailsId) : null;
+      const editingVideo = editingNote ? VIDEOS_DATA.videos.find(v => v.id === editingNote) : null;
+      const progressPct = stats.total > 0 ? Math.round((stats.watched / stats.total) * 100) : 0;
+
+      return (
+        <div className="min-h-screen flex">
+          <aside className="w-60 glass m-3 mr-0 rounded-2xl p-4 flex flex-col gap-1 sticky top-3 h-[calc(100vh-1.5rem)] overflow-y-auto scroll-hide">
+            <div className="mb-4 px-1">
+              <h1 className="text-xl font-bold gradient-text">🎬 AI 影片庫</h1>
+              <p className="text-[10px] text-slate-500 mt-0.5 tracking-wider">MY YOUTUBE AI COLLECTION</p>
+            </div>
+
+            <div className="text-[10px] text-slate-500 px-3 mb-1 mt-1 tracking-wider uppercase font-semibold">資料夾</div>
+            <SidebarItem icon="📦" label="全部影片" count={VIDEOS_DATA.videos.length}
+              active={activeFolder === "all"} onClick={() => setActiveFolder("all")} />
+            {Object.entries(folderCounts).sort().map(([f, c]) => (
+              <SidebarItem key={f} icon="📁" label={f} count={c}
+                active={activeFolder === f} onClick={() => setActiveFolder(f)} />
+            ))}
+
+            <div className="text-[10px] text-slate-500 px-3 mb-1 mt-4 tracking-wider uppercase font-semibold">內容類型</div>
+            <SidebarItem icon="🌐" label="全部類型" count={stats.summarized}
+              active={typeFilter === "all"} onClick={() => setTypeFilter("all")} />
+            {Object.entries(typeCounts).sort((a, b) => b[1] - a[1]).map(([t, c]) => {
+              const meta = CONTENT_TYPE_META[t];
+              return meta ? (
+                <SidebarItem key={t} icon={meta.emoji} label={meta.label} count={c}
+                  active={typeFilter === t} onClick={() => setTypeFilter(t)} />
+              ) : null;
+            })}
+
+            <div className="text-[10px] text-slate-500 px-3 mb-1 mt-4 tracking-wider uppercase font-semibold">觀看狀態</div>
+            <SidebarItem icon="🌐" label="全部" count={stats.total}
+              active={statusFilter === "all"} onClick={() => setStatusFilter("all")} />
+            <SidebarItem icon="🆕" label="未看" count={stats.unwatched}
+              active={statusFilter === "unwatched"} onClick={() => setStatusFilter("unwatched")} />
+            <SidebarItem icon="✓" label="已看過" count={stats.watched}
+              active={statusFilter === "watched"} onClick={() => setStatusFilter("watched")} />
+
+            <div className="mt-auto pt-4 border-t border-slate-200/60 text-xs text-slate-500 space-y-1.5 px-1">
+              <div className="flex justify-between"><span>總時長</span><span className="text-slate-700 font-medium">{formatHours(stats.totalSec)}</span></div>
+              <div className="flex justify-between"><span>已看</span><span className="text-emerald-600 font-medium">{formatHours(stats.watchedSec)}</span></div>
+              <div className="flex justify-between"><span>剩餘</span><span className="text-amber-600 font-medium">{formatHours(stats.totalSec - stats.watchedSec)}</span></div>
+              <div className="mt-2 h-1.5 bg-slate-200/60 rounded-full overflow-hidden">
+                <div className="h-full gradient-bar transition-all" style={{ width: `${progressPct}%` }} />
+              </div>
+              <div className="text-center text-[11px] text-slate-500">
+                {stats.watched}/{stats.total} ({progressPct}%)
+              </div>
+              <div className="text-center text-[10px] text-slate-400 pt-1">
+                AI 摘要 {stats.summarized}/{stats.total}
+              </div>
+            </div>
+          </aside>
+
+          <main className="flex-1 p-6 max-w-[1600px]">
+            <div className="flex flex-wrap gap-3 items-center mb-6">
+              <div className="relative flex-1 min-w-[240px]">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+                <input
+                  type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+                  placeholder="搜尋標題、頻道、摘要、技術 tag..."
+                  className="w-full glass-card rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 text-slate-700 placeholder:text-slate-400"
+                />
+              </div>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
+                className="glass-card rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 cursor-pointer text-slate-700">
+                <option value="date_desc">📅 日期：新→舊</option>
+                <option value="date_asc">📅 日期：舊→新</option>
+                <option value="score_desc">🔧 落地度：高→低</option>
+                <option value="score_asc">🔧 落地度：低→高</option>
+                <option value="duration_asc">⏱ 時長：短→長</option>
+                <option value="duration_desc">⏱ 時長：長→短</option>
+              </select>
+            </div>
+
+            <div className="mb-5">
+              <h2 className="text-2xl font-semibold text-slate-800">
+                {activeFolder === "all" ? "全部影片" : activeFolder}
+                <span className="ml-2 text-sm text-slate-500 font-normal">共 {filtered.length} 支</span>
+              </h2>
+              {(typeFilter !== "all" || statusFilter !== "all") && (
+                <p className="text-xs text-slate-500 mt-1">
+                  篩選：
+                  {typeFilter !== "all" && CONTENT_TYPE_META[typeFilter] && (
+                    <span className="mx-1">{CONTENT_TYPE_META[typeFilter].label}</span>
+                  )}
+                  {statusFilter !== "all" && (
+                    <span className="mx-1">· {statusFilter === "watched" ? "已看過" : "未看"}</span>
+                  )}
+                </p>
+              )}
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="text-center py-20 text-slate-400">
+                <div className="text-5xl mb-3">🤷</div>
+                <p>沒有符合條件的影片</p>
+                <button
+                  onClick={() => { setSearch(""); setActiveFolder("all"); setStatusFilter("all"); setTypeFilter("all"); }}
+                  className="mt-4 text-sm text-sky-600 hover:underline">清除所有篩選</button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {filtered.map(v => (
+                  <VideoCard key={v.id} video={v}
+                    isWatched={watched.has(v.id)}
+                    onToggleWatched={toggleWatched}
+                    onOpenNotes={setEditingNote}
+                    onOpenDetails={setDetailsId}
+                    hasNote={!!notes[v.id]}
+                  />
+                ))}
+              </div>
+            )}
+
+            <footer className="mt-12 pt-6 border-t border-slate-200/60 text-xs text-slate-400 text-center">
+              Phase 3 完成 · {stats.summarized}/{stats.total} 支已 AI 摘要 · Powered by Gemini 2.5 Flash
+            </footer>
+          </main>
+
+          {editingNote && (
+            <NoteModal video={editingVideo} currentNote={notes[editingNote]}
+              onSave={saveNote} onClose={() => setEditingNote(null)} />
+          )}
+          {detailsId && (
+            <DetailsModal video={detailsVideo} onClose={() => setDetailsId(null)} />
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,301 @@
+"""
+Phase 3｜Gemini AI 摘要
+======================
+讀 data/videos_raw.json 中還沒摘要的影片，呼叫 Gemini 2.5 Flash
+直接吃 YouTube URL，產生繁中摘要 + 落地評估，寫回原檔。
+
+特色：
+- 直接吃 YouTube URL（不用抓字幕、無字幕影片也能處理）
+- 每支處理完立刻存檔 → 斷點續傳，不怕中途失敗
+- 試跑模式 (--limit 5) 先看 5 支再決定批次跑
+
+使用範例：
+    python scripts/summarize.py --limit 5         # 試跑 5 支
+    python scripts/summarize.py                   # 跑完全部尚未處理的
+    python scripts/summarize.py --force --limit 1 # 重新摘要第 1 支（測 prompt 用）
+    python scripts/summarize.py --model gemini-2.5-pro  # 換 Pro 模型（更貴更準）
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import time
+from pathlib import Path
+from typing import Optional
+
+from dotenv import load_dotenv
+
+try:
+    from google import genai
+    from google.genai import types
+except ImportError:
+    sys.exit("❌ 請先 pip install -r requirements.txt（需要 google-genai）")
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+DATA_PATH = PROJECT_ROOT / "data" / "videos_raw.json"
+JS_PATH = PROJECT_ROOT / "data" / "videos.js"
+ENV_PATH = PROJECT_ROOT / ".env"
+
+
+# ---------- Prompt ----------
+SYSTEM_PROMPT = """你是一位資深 AI 工程師，幫一位「特別在意 AI 應用實際落地」的工程師整理 YouTube 學習收藏。
+請看完這支影片後，用繁體中文做**嚴格、保守**的分析。
+
+⚠️ 重要原則：寧可保守，不要寬鬆。沒有明顯證據就 false / null / 低分。
+
+只回傳一個 JSON（不要前言、不要 markdown），結構：
+
+{
+  "summary": "3-5 句具體摘要",
+  "key_points": ["3-5 條最重要的技術重點"],
+  "topics": ["最多 6 個最核心的技術主題"],
+  "content_type": "production_case | tutorial | demo | theory | news | discussion",
+  "has_code": true,
+  "has_real_company_case": false,
+  "company_mentioned": null,
+  "production_signals": {
+    "discusses_cost": false,
+    "discusses_latency": false,
+    "discusses_reliability": false,
+    "discusses_evaluation": false,
+    "discusses_failure_modes": false
+  },
+  "practicality_score": 7,
+  "abstraction_level": "hands_on"
+}
+
+==== 嚴格判定規則 ====
+
+【summary】
+✅ 好範例：「展示如何用 LangChain + Pinecone 建 RAG，並比較 BM25 vs vector 檢索效果」
+❌ 壞範例：「講解 RAG 概念與應用」、「探討 LLM 的內部機制」（這些是空話）
+必須說出：實際用了什麼技術 + 做了什麼具體事 + 得到什麼結論。
+
+【topics】
+**最多 6 個**。挑最重要、最能代表這支影片主題的技術名詞。
+不要把每個被提及的詞都列上來。例如影片講 RAG 實作：
+✅ ["RAG", "LangChain", "Vector DB", "BM25"]
+❌ ["embedding", "chunking", "retrieval", "vector", "similarity", "tokenization", ...]（過度展開）
+
+【production_signals 五項】
+**必須影片明確花至少 30 秒以上專門討論才算 true**。光提到一句、舉例帶過、列在投影片但沒展開 — 一律 false。
+- discusses_cost：明確談 API 費用、token 成本、或如何降低成本
+- discusses_latency：明確討論延遲、回應時間、optimization
+- discusses_reliability：明確討論錯誤處理、故障恢復、guardrails
+- discusses_evaluation：明確討論如何評估 AI 系統品質、metrics、test cases
+- discusses_failure_modes：明確討論失敗案例、bug、模型錯誤、邊界情況
+
+【practicality_score（落地實作度）— 嚴格按 content_type 給範圍】
+- production_case + has_code: 8-10
+- tutorial + has_code: 6-9
+- tutorial 純概念講解: 4-6
+- demo: 3-6
+- **theory: 2-4（上限 4，不可給更高）**
+- **news: 0-2（上限 2）**
+- **discussion: 0-3（上限 3）**
+
+【has_real_company_case】
+**必須是某家公司怎麼導入 AI 的具體故事**才算 true。需要：
+- 公司名 + 具體場景（如客服/內部工具）+ 具體做法 + 結果或學到的事
+- 光提一句「Klarna 也用 AI」不算
+- 引用論文/學術研究不算
+- 講者隨手舉例帶過不算
+
+【company_mentioned】
+**只填「這家公司怎麼用 AI」是影片主題的公司**：
+- 講者所在公司但跟內容無關 → null
+- 引用論文作者所在公司（如 Anthropic 發了某論文）→ null
+- 純舉例帶過 → null
+- 顧問公司提到客戶但沒細節 → null
+- 沒有 100% 確定 → null
+
+【content_type】
+- production_case：真實公司怎麼導入 AI 的案例（要有公司故事）
+- tutorial：手把手教學
+- demo：純展示某工具/功能
+- theory：純理論/概念解釋
+- news：新聞、產品發布
+- discussion：訪談、圓桌、雜談
+
+【abstraction_level】
+- hands_on：90% 以上是實作步驟、code、工具操作
+- mixed：實作+理論交織
+- conceptual：90% 以上是概念講解，沒什麼實作
+
+==== 其他 ====
+- 影片是中文或英文都可以，回應**一律繁體中文**
+- 所有不確定的欄位 → 寧可保守（false / null / 低分）
+"""
+
+
+# ---------- I/O ----------
+def load_api_key() -> str:
+    load_dotenv(ENV_PATH)
+    key = os.getenv("GEMINI_API_KEY")
+    if not key:
+        sys.exit("❌ 找不到 GEMINI_API_KEY，請在 .env 設定")
+    return key
+
+
+def load_videos() -> dict:
+    if not DATA_PATH.exists():
+        sys.exit(f"❌ 找不到 {DATA_PATH}，請先跑 fetch_playlists.py")
+    with open(DATA_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_videos(payload: dict):
+    """寫回 videos_raw.json，並同步更新 videos.js 給 preview.html。"""
+    with open(DATA_PATH, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    with open(JS_PATH, "w", encoding="utf-8") as f:
+        f.write("// Auto-generated — do not edit manually\n")
+        f.write("window.VIDEOS_DATA = ")
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+        f.write(";\n")
+
+
+def is_summarized(video: dict) -> bool:
+    return bool(video.get("summary"))
+
+
+# ---------- Gemini call ----------
+def summarize_video(client, video: dict, model: str) -> Optional[dict]:
+    """呼叫 Gemini 摘要單支影片，回傳 dict 或 None（失敗）。"""
+    try:
+        response = client.models.generate_content(
+            model=model,
+            contents=[
+                SYSTEM_PROMPT,
+                types.Part(file_data=types.FileData(
+                    file_uri=video["url"],
+                    mime_type="video/*",
+                )),
+            ],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.3,
+            ),
+        )
+        text = (response.text or "").strip()
+        if not text:
+            print("     ⚠️  Gemini 回傳空白")
+            return None
+        result = json.loads(text)
+        if not result.get("summary"):
+            print("     ⚠️  回傳 JSON 沒有 summary 欄位")
+            return None
+        return result
+    except json.JSONDecodeError as e:
+        print(f"     ⚠️  JSON 解析失敗：{e}")
+        return None
+    except Exception as e:
+        print(f"     ❌ {type(e).__name__}: {str(e)[:200]}")
+        return None
+
+
+def apply_summary(video: dict, result: dict):
+    """把 Gemini 回傳的結構化結果寫進影片紀錄。"""
+    video["summary"] = result.get("summary")
+    video["key_points"] = result.get("key_points", []) or []
+    video["tags"] = result.get("topics", []) or []
+    video["content_type"] = result.get("content_type")
+    video["has_code"] = result.get("has_code")
+    video["has_real_company_case"] = result.get("has_real_company_case")
+    video["company_mentioned"] = result.get("company_mentioned")
+    video["production_signals"] = result.get("production_signals")
+    video["practicality_score"] = result.get("practicality_score")
+    video["abstraction_level"] = result.get("abstraction_level")
+
+
+# ---------- 主流程 ----------
+def main():
+    parser = argparse.ArgumentParser(description="用 Gemini 摘要 YouTube 影片")
+    parser.add_argument("--limit", type=int, default=None, help="只處理前 N 支（試跑用）")
+    parser.add_argument("--model", default="gemini-2.5-flash",
+                        help="Gemini 模型（預設 gemini-2.5-flash）")
+    parser.add_argument("--force", action="store_true",
+                        help="重新摘要已處理過的影片")
+    parser.add_argument("--sleep", type=float, default=4.0,
+                        help="每支影片間的停頓秒數（避免超過 RPM 限制，預設 4 秒）")
+    args = parser.parse_args()
+
+    api_key = load_api_key()
+    client = genai.Client(api_key=api_key)
+
+    payload = load_videos()
+    videos = payload["videos"]
+
+    # 篩選需要處理的
+    to_process = []
+    skipped_unavailable = 0
+    skipped_done = 0
+    for v in videos:
+        if v.get("status") != "available":
+            skipped_unavailable += 1
+            continue
+        if not args.force and is_summarized(v):
+            skipped_done += 1
+            continue
+        to_process.append(v)
+
+    if args.limit:
+        to_process = to_process[:args.limit]
+
+    print(f"🤖 模型：{args.model}")
+    print(f"📊 全部影片：{len(videos)} 支")
+    print(f"   ├── 失效跳過：{skipped_unavailable}")
+    print(f"   ├── 已摘要跳過：{skipped_done}")
+    print(f"   └── 待處理：{len(to_process)}{f' (試跑 --limit {args.limit})' if args.limit else ''}")
+
+    if not to_process:
+        print("\n✅ 沒有需要摘要的影片")
+        return
+
+    print()
+    success = 0
+    failed = []
+    start_time = time.time()
+
+    for i, video in enumerate(to_process, 1):
+        title = video["title"][:55]
+        print(f"[{i:3d}/{len(to_process)}] {title}")
+
+        result = summarize_video(client, video, args.model)
+        if result is None:
+            failed.append(video["id"])
+            time.sleep(args.sleep)
+            continue
+
+        apply_summary(video, result)
+        success += 1
+        save_videos(payload)  # 每支都立刻存檔（斷點續傳）
+
+        # 顯示這支的判定結果
+        ptype = result.get("content_type", "?")
+        score = result.get("practicality_score", "?")
+        company = result.get("company_mentioned")
+        signals = result.get("production_signals", {}) or {}
+        signal_count = sum(1 for v in signals.values() if v)
+
+        summary_preview = (result.get("summary") or "")[:70]
+        print(f"     ✓ {summary_preview}{'...' if len(result.get('summary', '')) > 70 else ''}")
+        print(f"       類型: {ptype:18s} 落地度: {score}/10  生產考量: {signal_count}/5"
+              + (f"  🏢 {company}" if company else ""))
+
+        time.sleep(args.sleep)
+
+    elapsed = time.time() - start_time
+    print(f"\n✅ 完成！耗時 {elapsed:.1f} 秒（平均 {elapsed/max(len(to_process),1):.1f} 秒/支）")
+    print(f"   成功：{success} 支")
+    if failed:
+        print(f"   失敗：{len(failed)} 支 — id: {', '.join(failed[:5])}{'...' if len(failed) > 5 else ''}")
+    print(f"\n💡 已自動更新 data/videos.js — 重新整理 preview.html 看新摘要")
+
+
+if __name__ == "__main__":
+    main()

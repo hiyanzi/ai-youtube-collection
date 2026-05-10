@@ -1,0 +1,23 @@
+# Secrets
+.env
+
+# Generated data（由腳本產生，不放版控）
+data/videos_raw.json
+# data/videos.json  ← Phase 2 之後會放上版控供網站使用，到時候解除註解這行
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node / 前端（之後 Phase 1 會用到）
+node_modules/
+dist/
+.next/
+
+# 系統雜項
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
