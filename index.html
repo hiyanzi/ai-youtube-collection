@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI YouTube 影片收藏</title>
+  <title>AI 學習影片 — YouTube AI 知識庫</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -18,24 +18,24 @@
   <script src="./data/videos.js"></script>
   <style>
     /* =====================================================================
-       配色主題 — 改這裡換整體顏色，不用翻 HTML 其他地方
+       配色主題 — 知性清爽風格
        ===================================================================== */
     :root {
-      --orb-left-color:  #7dd3fc;               /* 左上背景光暈 (sky-300) */
-      --orb-right-color: #c4b5fd;               /* 右下背景光暈 (violet-300) */
+      --orb-left-color:  #99f6e4;               /* 左上背景光暈 (teal-200) */
+      --orb-right-color: #bfdbfe;               /* 右下背景光暈 (blue-200) */
 
-      --bg-blob-1: rgba(186, 230, 253, 0.50);   /* 背景漸層 blob 1 (sky) */
-      --bg-blob-2: rgba(221, 214, 254, 0.50);   /* 背景漸層 blob 2 (violet) */
-      --bg-blob-3: rgba(207, 250, 254, 0.40);   /* 背景漸層 blob 3 (cyan) */
+      --bg-blob-1: rgba(20, 184, 166, 0.08);    /* 背景漸層 blob 1 (teal) */
+      --bg-blob-2: rgba(37, 99, 235, 0.07);     /* 背景漸層 blob 2 (blue) */
+      --bg-blob-3: rgba(15, 23, 42, 0.035);     /* 背景深度 */
 
-      --gradient-text-from: #0284c7;            /* 標題漸層起點 (sky-700) */
-      --gradient-text-to:   #7c3aed;            /* 標題漸層終點 (violet-700) */
+      --gradient-text-from: #0f172a;            /* 標題漸層起點 */
+      --gradient-text-to:   #0f766e;            /* 標題漸層終點 */
 
-      --gradient-bar-from:  #38bdf8;            /* 進度條漸層起點 (sky-400) */
-      --gradient-bar-to:    #a78bfa;            /* 進度條漸層終點 (violet-400) */
+      --gradient-bar-from:  #14b8a6;            /* 進度條漸層起點 */
+      --gradient-bar-to:    #2563eb;            /* 進度條漸層終點 */
 
-      --card-hover-border:  rgba(125, 211, 252, 0.60);           /* 卡片 hover 邊框 */
-      --card-hover-shadow:  rgba(56, 189, 248, 0.12), rgba(56, 189, 248, 0.18); /* 卡片 hover 陰影 */
+      --card-hover-border:  rgba(20, 184, 166, 0.45);            /* 卡片 hover 邊框 */
+      --card-hover-shadow:  rgba(15, 23, 42, 0.06), rgba(20, 184, 166, 0.10); /* 卡片 hover 陰影 */
     }
     /* ===================================================================== */
 
@@ -45,7 +45,7 @@
         radial-gradient(ellipse 80% 50% at 20% 0%,   var(--bg-blob-1), transparent 60%),
         radial-gradient(ellipse 60% 50% at 80% 30%,  var(--bg-blob-2), transparent 60%),
         radial-gradient(ellipse 70% 50% at 50% 100%, var(--bg-blob-3), transparent 60%),
-        linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+        linear-gradient(180deg, #f8fafc 0%, #eef2f7 48%, #f8fafc 100%);
       background-attachment: fixed;
       min-height: 100vh;
     }
@@ -55,27 +55,27 @@
     .scroll-hide::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.6); }
 
     .glass {
-      background: rgba(255, 255, 255, 0.6);
-      backdrop-filter: blur(16px) saturate(160%);
-      -webkit-backdrop-filter: blur(16px) saturate(160%);
-      border: 1px solid rgba(255, 255, 255, 0.7);
-      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 8px 24px -12px rgba(15, 23, 42, 0.08);
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(18px) saturate(145%);
+      -webkit-backdrop-filter: blur(18px) saturate(145%);
+      border: 1px solid rgba(203, 213, 225, 0.72);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 18px 40px -28px rgba(15, 23, 42, 0.36);
     }
     .glass-card {
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(12px) saturate(150%);
-      -webkit-backdrop-filter: blur(12px) saturate(150%);
-      border: 1px solid rgba(226, 232, 240, 0.8);
-      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px -8px rgba(15, 23, 42, 0.08);
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px) saturate(132%);
+      -webkit-backdrop-filter: blur(10px) saturate(132%);
+      border: 1px solid rgba(203, 213, 225, 0.78);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 16px 32px -28px rgba(15, 23, 42, 0.35);
     }
     .glass-card:hover {
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.98);
       border-color: var(--card-hover-border);
-      box-shadow: 0 4px 12px var(--card-hover-shadow);
+      box-shadow: 0 10px 24px var(--card-hover-shadow);
     }
 
     .video-card { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
-    .video-card:hover { transform: translateY(-3px); }
+    .video-card:hover { transform: translateY(-2px); }
     .watched-card { opacity: 0.55; filter: grayscale(0.5); }
     .watched-card:hover { opacity: 0.88; filter: grayscale(0.1); }
 
@@ -102,8 +102,8 @@
     .orb {
       position: fixed;
       border-radius: 50%;
-      filter: blur(60px);
-      opacity: 0.4;
+      filter: blur(100px);
+      opacity: 0.15;
       pointer-events: none;
       z-index: 0;
     }
@@ -114,8 +114,8 @@
   </style>
 </head>
 <body class="text-slate-800 min-h-screen">
-  <div class="orb" style="width: 400px; height: 400px; background: var(--orb-left-color);  top: -100px; left: -100px;"></div>
-  <div class="orb" style="width: 500px; height: 500px; background: var(--orb-right-color); bottom: -150px; right: -100px;"></div>
+  <div class="orb" style="width: 500px; height: 500px; background: var(--orb-left-color);  top: -100px; left: -100px;"></div>
+  <div class="orb" style="width: 600px; height: 600px; background: var(--orb-right-color); bottom: -150px; right: -100px;"></div>
 
   <div id="root" class="relative z-10"></div>
 
@@ -145,12 +145,12 @@
     };
 
     const CONTENT_TYPE_META = {
-      production_case: { label: "公司案例", emoji: "🏢", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-      tutorial:        { label: "實戰教學", emoji: "📚", color: "bg-sky-50 text-sky-700 border-sky-200" },
-      demo:            { label: "工具展示", emoji: "🎬", color: "bg-violet-50 text-violet-700 border-violet-200" },
-      theory:          { label: "理論講解", emoji: "🧠", color: "bg-amber-50 text-amber-700 border-amber-200" },
-      news:            { label: "新聞", emoji: "📰", color: "bg-slate-100 text-slate-600 border-slate-200" },
-      discussion:      { label: "討論雜談", emoji: "💬", color: "bg-rose-50 text-rose-700 border-rose-200" },
+      production_case: { label: "公司案例", emoji: "🏢", navIcon: "briefcase", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+      tutorial:        { label: "實戰教學", emoji: "📚", navIcon: "flask", color: "bg-teal-50 text-teal-700 border-teal-200" },
+      demo:            { label: "工具展示", emoji: "🎬", navIcon: "play", color: "bg-sky-50 text-sky-700 border-sky-200" },
+      theory:          { label: "理論講解", emoji: "🧠", navIcon: "nodes", color: "bg-amber-50 text-amber-700 border-amber-200" },
+      news:            { label: "新聞", emoji: "📰", navIcon: "newspaper", color: "bg-slate-100 text-slate-600 border-slate-200" },
+      discussion:      { label: "討論雜談", emoji: "💬", navIcon: "chat", color: "bg-rose-50 text-rose-700 border-rose-200" },
     };
 
     const SIGNAL_META = {
@@ -164,26 +164,122 @@
     const scoreColor = (score) => {
       if (score == null) return "bg-slate-100 text-slate-500 border-slate-200";
       if (score >= 8) return "bg-emerald-50 text-emerald-700 border-emerald-200";
-      if (score >= 5) return "bg-sky-50 text-sky-700 border-sky-200";
+      if (score >= 5) return "bg-teal-50 text-teal-700 border-teal-200";
       return "bg-slate-100 text-slate-500 border-slate-200";
     };
 
     // ====== Components ======
+    function SidebarGlyph({ name }) {
+      const common = {
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: 1.8,
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+      };
+      const icons = {
+        library: (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" {...common}>
+            <rect x="4" y="5" width="16" height="14" rx="2" />
+            <path d="M8 9h2M8 13h2M14 9h2M14 13h2" />
+          </svg>
+        ),
+        collection: (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" {...common}>
+            <path d="M5 7h14M5 12h14M5 17h14" />
+            <path d="M4 5.5h16v13H4z" opacity=".35" />
+          </svg>
+        ),
+        sparkle: (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" {...common}>
+            <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z" />
+            <path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8L18 15z" />
+          </svg>
+        ),
+        briefcase: (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" {...common}>
+            <path d="M9 7V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1" />
+            <rect x="4" y="7" width="16" height="12" rx="2" />
+            <path d="M4 12h16M10 12v1h4v-1" />
+          </svg>
+        ),
+        flask: (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" {...common}>
+            <path d="M10 4h4M11 4v5l-5 8a2 2 0 0 0 1.7 3h8.6a2 2 0 0 0 1.7-3l-5-8V4" />
+            <path d="M8.5 15h7" />
+          </svg>
+        ),
+        play: (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" {...common}>
+            <rect x="4" y="5" width="16" height="14" rx="3" />
+            <path d="M10 9l5 3-5 3V9z" />
+          </svg>
+        ),
+        nodes: (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" {...common}>
+            <circle cx="7" cy="8" r="2.5" />
+            <circle cx="17" cy="8" r="2.5" />
+            <circle cx="12" cy="17" r="2.5" />
+            <path d="M9.2 9.5l1.7 4.9M14.8 9.5l-1.7 4.9" />
+          </svg>
+        ),
+        newspaper: (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" {...common}>
+            <path d="M5 6h14v12H5z" />
+            <path d="M8 9h4M8 12h8M8 15h8M15 9h1" />
+          </svg>
+        ),
+        chat: (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" {...common}>
+            <path d="M5 6h14v10H9l-4 3V6z" />
+            <path d="M8 10h8M8 13h5" />
+          </svg>
+        ),
+        circle: (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" {...common}>
+            <circle cx="12" cy="12" r="7" />
+            <path d="M12 8v4l3 2" />
+          </svg>
+        ),
+        unread: (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" {...common}>
+            <circle cx="12" cy="12" r="7" />
+            <path d="M12 8v4" />
+          </svg>
+        ),
+        check: (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" {...common}>
+            <circle cx="12" cy="12" r="7" />
+            <path d="M8.5 12.2l2.2 2.2 4.8-5" />
+          </svg>
+        ),
+      };
+      return icons[name] || icons.collection;
+    }
+
     function SidebarItem({ icon, label, count, active, onClick }) {
       return (
         <button
           onClick={onClick}
-          className={`w-full text-left px-3 py-2 rounded-lg flex items-center justify-between transition-all ${
+          className={`group w-full text-left px-2.5 py-2 rounded-xl flex items-center justify-between transition-all border ${
             active
-              ? "bg-gradient-to-r from-sky-100/90 to-violet-100/60 text-sky-700 shadow-sm border border-sky-200/60"
-              : "hover:bg-white/60 text-slate-600 border border-transparent"
+              ? "bg-teal-50/95 text-slate-900 shadow-sm border-teal-200 ring-1 ring-teal-100"
+              : "hover:bg-white/85 text-slate-600 border-transparent"
           }`}
         >
           <span className="flex items-center gap-2 min-w-0">
-            <span className="shrink-0">{icon}</span>
+            <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg transition ${
+              active
+                ? "bg-white text-teal-700 shadow-sm ring-1 ring-teal-200"
+                : "bg-slate-100/80 text-slate-500 group-hover:bg-white group-hover:text-teal-700"
+            }`}>
+              <SidebarGlyph name={icon} />
+            </span>
             <span className="text-sm truncate font-medium">{label}</span>
           </span>
-          <span className={`text-xs shrink-0 ml-2 ${active ? "text-sky-600" : "text-slate-400"}`}>{count}</span>
+          <span className={`text-xs shrink-0 ml-2 rounded-full px-2 py-0.5 ${
+            active ? "bg-white text-teal-700 ring-1 ring-teal-100" : "text-slate-400"
+          }`}>{count}</span>
         </button>
       );
     }
@@ -208,7 +304,7 @@
       );
     }
 
-    function VideoCard({ video, isWatched, onToggleWatched, onOpenNotes, hasNote, onOpenDetails }) {
+    function VideoCard({ video, isWatched, onToggleWatched, onOpenNotes, hasNote, onOpenDetails, onSendToNotebookLM }) {
       const isUnavailable = video.status === "unavailable";
       const cardCls = isWatched ? "watched-card" : "";
       const ct = CONTENT_TYPE_META[video.content_type];
@@ -216,7 +312,7 @@
       const hasSummary = !!video.summary;
 
       return (
-        <div className={`video-card glass-card rounded-2xl overflow-hidden flex flex-col ${cardCls}`}>
+        <div className={`video-card glass-card rounded-xl overflow-hidden flex flex-col ${cardCls}`}>
           {/* 縮圖 */}
           <div
             className={`relative aspect-video bg-slate-100 ${!isUnavailable ? "cursor-pointer group" : ""}`}
@@ -234,12 +330,12 @@
             )}
 
             {video.duration && (
-              <span className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-slate-900/80 text-white text-xs rounded backdrop-blur-sm">
+              <span className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-slate-950/85 text-white text-xs rounded-md backdrop-blur-sm">
                 {video.duration}
               </span>
             )}
             {isWatched && (
-              <div className="absolute top-2 right-2 bg-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-medium shadow-md">
+              <div className="absolute top-2 right-2 bg-teal-500 text-white text-xs px-2 py-0.5 rounded-md font-medium shadow-md">
                 ✓ 已看
               </div>
             )}
@@ -249,8 +345,8 @@
               </div>
             )}
             {!isUnavailable && (
-              <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                <div className="bg-red-600 text-white px-4 py-2 rounded-full flex items-center gap-1.5 font-medium text-sm shadow-lg">
+              <div className="absolute inset-0 bg-slate-950/38 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                <div className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-1.5 font-medium text-sm shadow-lg">
                   ▶ 開 YouTube
                 </div>
               </div>
@@ -258,7 +354,7 @@
           </div>
 
           {/* 內容區 */}
-          <div className="p-3 space-y-2 flex-1 flex flex-col">
+          <div className="p-3.5 space-y-2 flex-1 flex flex-col">
             {/* AI 徽章列 */}
             {(ct || score != null) && (
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -289,7 +385,7 @@
             )}
 
             {/* 標題 */}
-            <h3 className="text-sm font-semibold leading-snug line-clamp-2 min-h-[2.5rem] text-slate-800">
+            <h3 className="text-[15px] font-semibold leading-snug line-clamp-2 min-h-[2.55rem] text-slate-900">
               {video.title}
             </h3>
 
@@ -302,7 +398,7 @@
 
             {/* AI 摘要 */}
             {hasSummary && (
-              <p className="text-xs text-slate-600 leading-relaxed line-clamp-3 cursor-pointer hover:text-slate-800"
+              <p className="text-xs text-slate-600 leading-relaxed line-clamp-2 cursor-pointer hover:text-slate-900"
                  onClick={() => onOpenDetails(video.id)}
                  title="點擊查看完整摘要與重點">
                 {video.summary}
@@ -313,7 +409,7 @@
             {video.tags && video.tags.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {video.tags.slice(0, 4).map(t => (
-                  <span key={t} className="px-1.5 py-0.5 bg-sky-50 text-sky-700 text-[10px] rounded border border-sky-100 font-medium">
+                  <span key={t} className="px-1.5 py-0.5 bg-slate-100 text-slate-700 text-[10px] rounded-md border border-slate-200 font-medium">
                     {t}
                   </span>
                 ))}
@@ -342,8 +438,8 @@
                   onClick={() => onToggleWatched(video.id)}
                   className={`flex-1 text-xs px-2 py-1.5 rounded-lg transition font-medium ${
                     isWatched
-                      ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
-                      : "bg-white/80 text-slate-600 hover:bg-slate-50 border border-slate-200"
+                      ? "bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200"
+                      : "bg-white/90 text-slate-600 hover:bg-slate-50 border border-slate-200"
                   }`}
                 >
                   {isWatched ? "✓ 看過" : "👁 標記看過"}
@@ -351,7 +447,7 @@
                 {hasSummary && (
                   <button
                     onClick={() => onOpenDetails(video.id)}
-                    className="text-xs px-2.5 py-1.5 rounded-lg bg-white/80 text-slate-600 hover:bg-slate-50 border border-slate-200 transition"
+                    className="text-xs px-2.5 py-1.5 rounded-lg bg-white/90 text-slate-600 hover:bg-slate-50 border border-slate-200 transition"
                     title="完整資訊"
                   >
                     ⓘ
@@ -362,22 +458,20 @@
                   className={`text-xs px-2.5 py-1.5 rounded-lg transition border ${
                     hasNote
                       ? "bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200"
-                      : "bg-white/80 text-slate-600 hover:bg-slate-50 border-slate-200"
+                      : "bg-white/90 text-slate-600 hover:bg-slate-50 border-slate-200"
                   }`}
                   title="筆記"
                 >
                   📝
                 </button>
-                <a
-                  href="https://notebooklm.google.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-xs px-2.5 py-1.5 rounded-lg bg-white/80 text-slate-600 hover:bg-slate-50 border border-slate-200 transition"
-                  title="在 NotebookLM 開啟"
+                <button
+                  type="button"
+                  onClick={() => onSendToNotebookLM(video)}
+                  className="text-xs px-2.5 py-1.5 rounded-lg bg-white/90 text-slate-600 hover:bg-slate-50 border border-slate-200 transition"
+                  title="複製影片連結並開啟 NotebookLM"
                 >
                   🧠
-                </a>
+                </button>
               </div>
             )}
           </div>
@@ -404,7 +498,7 @@
                 onChange={(e) => setText(e.target.value)}
                 rows={8}
                 placeholder="記下重點、心得、待辦..."
-                className="w-full bg-white/80 border border-slate-200 rounded-lg p-3 text-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100 resize-none text-slate-700"
+                className="w-full bg-white/80 border border-slate-200 rounded-lg p-3 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 resize-none text-slate-700"
                 autoFocus
               />
               <p className="text-xs text-slate-500 mt-2">支援多行。儲存後僅本機保存（localStorage）。</p>
@@ -415,7 +509,7 @@
               </button>
               <button
                 onClick={() => { onSave(video.id, text); onClose(); }}
-                className="px-4 py-2 text-sm bg-gradient-to-r from-sky-500 to-violet-500 text-white hover:from-sky-600 hover:to-violet-600 rounded-lg transition font-medium shadow-md"
+                className="px-4 py-2 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 rounded-lg transition font-medium shadow-md"
               >
                 儲存
               </button>
@@ -485,7 +579,7 @@
                   <ul className="space-y-1.5">
                     {video.key_points.map((kp, i) => (
                       <li key={i} className="text-sm text-slate-700 flex gap-2">
-                        <span className="text-sky-500 shrink-0">•</span>
+                        <span className="text-blue-600 shrink-0">•</span>
                         <span>{kp}</span>
                       </li>
                     ))}
@@ -499,7 +593,7 @@
                   <div className="text-[11px] font-semibold text-slate-500 tracking-wider uppercase mb-1.5">🏷 技術主題</div>
                   <div className="flex flex-wrap gap-1.5">
                     {video.tags.map(t => (
-                      <span key={t} className="px-2 py-1 bg-sky-50 text-sky-700 text-xs rounded-md border border-sky-100 font-medium">
+                      <span key={t} className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-md border border-blue-100 font-medium">
                         {t}
                       </span>
                     ))}
@@ -552,8 +646,14 @@
       const [editingNote, setEditingNote] = useState(null);
       const [detailsId, setDetailsId] = useState(null);
       const [sidebarOpen, setSidebarOpen] = useState(false);
+      const [toast, setToast] = useState(null);
 
       useEffect(() => { setSidebarOpen(false); }, [activeFolder, typeFilter, statusFilter]);
+      useEffect(() => {
+        if (!toast) return;
+        const timer = setTimeout(() => setToast(null), 4200);
+        return () => clearTimeout(timer);
+      }, [toast]);
 
       const [watched, setWatched] = useState(() => {
         try { return new Set(JSON.parse(localStorage.getItem("aiyt_watched") || "[]")); }
@@ -582,6 +682,25 @@
           else delete next[id];
           return next;
         });
+      };
+
+      const sendToNotebookLM = async (video) => {
+        try {
+          await navigator.clipboard.writeText(video.url);
+          setToast({
+            tone: "success",
+            title: "已複製 YouTube 連結",
+            message: "NotebookLM 開啟後，新增來源並貼上這個影片 URL。",
+          });
+        } catch {
+          setToast({
+            tone: "warn",
+            title: "無法自動複製",
+            message: "瀏覽器阻擋剪貼簿權限，請手動複製影片連結後貼到 NotebookLM。",
+          });
+        }
+
+        window.open("https://notebooklm.google.com/", "_blank", "noopener,noreferrer");
       };
 
       const folderCounts = useMemo(() => {
@@ -648,60 +767,69 @@
       const progressPct = stats.total > 0 ? Math.round((stats.watched / stats.total) * 100) : 0;
 
       return (
-        <div className="min-h-screen flex flex-col md:flex-row">
-          {/* Mobile Header */}
-          <div className="md:hidden glass sticky top-0 z-30 flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-2">
-              <button onClick={() => setSidebarOpen(true)} className="text-xl">☰</button>
-              <h1 className="text-lg font-bold gradient-text">🎬 AI 影片庫</h1>
+        <div className="min-h-screen flex flex-col">
+          {/* Top Header Bar */}
+          <header className="z-20 px-4 md:px-7 py-4 md:py-5 border-b border-slate-200/70 bg-white/70 backdrop-blur-xl">
+            <div className="flex items-center justify-between gap-4 max-w-[1760px] mx-auto">
+              <button onClick={() => setSidebarOpen(true)} className="md:hidden text-xl text-slate-600">☰</button>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold tracking-[0.22em] text-teal-700 uppercase">AI Video Knowledge Base</p>
+                <h1 className="text-2xl md:text-3xl font-bold gradient-text leading-tight">AI 學習影片工作台</h1>
+              </div>
+              <div className="text-right shrink-0">
+                <div className="flex items-center gap-2 justify-end">
+                  <span className="text-xs font-medium text-slate-600">{stats.watched}/{stats.total} 已完成</span>
+                  <div className="w-24 h-2 bg-slate-200/80 rounded-full overflow-hidden hidden sm:block">
+                    <div className="h-full gradient-bar transition-all" style={{ width: `${progressPct}%` }} />
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1.5 hidden sm:block">YouTube 收藏 · AI 摘要 · 學習筆記 · 進度追蹤</p>
+              </div>
             </div>
-            <span className="text-xs text-slate-500">{stats.watched}/{stats.total}</span>
-          </div>
+          </header>
 
           {/* Mobile Backdrop */}
           {sidebarOpen && (
             <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
           )}
 
-          <aside className={`fixed top-0 left-0 w-72 h-full z-50 glass p-4 flex flex-col gap-1 overflow-y-auto scroll-hide transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 md:w-60 md:m-3 md:mr-0 md:rounded-2xl md:sticky md:top-3 md:h-[calc(100vh-1.5rem)] md:z-10`}>
-            <div className="mb-4 px-1 flex items-center justify-between">
-              <div>
-                <h1 className="text-xl font-bold gradient-text">🎬 AI 影片庫</h1>
-                <p className="text-[10px] text-slate-500 mt-0.5 tracking-wider">MY YOUTUBE AI COLLECTION</p>
-              </div>
-              <button onClick={() => setSidebarOpen(false)} className="md:hidden text-lg text-slate-400 hover:text-slate-600 p-1">✕</button>
+          <div className="flex flex-1 flex-col md:flex-row">
+          <aside className={`fixed top-0 left-0 w-72 h-full z-50 glass p-4 flex flex-col gap-1 overflow-y-auto scroll-hide transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 md:w-60 md:m-4 md:mr-0 md:rounded-2xl md:sticky md:top-4 md:h-[calc(100vh-2rem)] md:z-10`}>
+            <div className="mb-3 px-1 flex items-center justify-between md:hidden">
+              <h2 className="text-base font-semibold text-slate-700">選單</h2>
+              <button onClick={() => setSidebarOpen(false)} className="text-lg text-slate-400 hover:text-slate-600 p-1">✕</button>
             </div>
 
-            <div className="text-[10px] text-slate-500 px-3 mb-1 mt-1 tracking-wider uppercase font-semibold">資料夾</div>
-            <SidebarItem icon="📦" label="全部影片" count={VIDEOS_DATA.videos.length}
+            <div className="text-[10px] text-slate-500 px-3 mb-1 mt-1 tracking-[0.18em] uppercase font-semibold">資料夾</div>
+            <SidebarItem icon="library" label="全部影片" count={VIDEOS_DATA.videos.length}
               active={activeFolder === "all"} onClick={() => setActiveFolder("all")} />
             {Object.entries(folderCounts).sort().map(([f, c]) => (
-              <SidebarItem key={f} icon="📁" label={f} count={c}
+              <SidebarItem key={f} icon="collection" label={f} count={c}
                 active={activeFolder === f} onClick={() => setActiveFolder(f)} />
             ))}
 
-            <div className="text-[10px] text-slate-500 px-3 mb-1 mt-4 tracking-wider uppercase font-semibold">內容類型</div>
-            <SidebarItem icon="🌐" label="全部類型" count={stats.summarized}
+            <div className="text-[10px] text-slate-500 px-3 mb-1 mt-4 tracking-[0.18em] uppercase font-semibold">內容類型</div>
+            <SidebarItem icon="sparkle" label="全部類型" count={stats.summarized}
               active={typeFilter === "all"} onClick={() => setTypeFilter("all")} />
             {Object.entries(typeCounts).sort((a, b) => b[1] - a[1]).map(([t, c]) => {
               const meta = CONTENT_TYPE_META[t];
               return meta ? (
-                <SidebarItem key={t} icon={meta.emoji} label={meta.label} count={c}
+                <SidebarItem key={t} icon={meta.navIcon} label={meta.label} count={c}
                   active={typeFilter === t} onClick={() => setTypeFilter(t)} />
               ) : null;
             })}
 
-            <div className="text-[10px] text-slate-500 px-3 mb-1 mt-4 tracking-wider uppercase font-semibold">觀看狀態</div>
-            <SidebarItem icon="🌐" label="全部" count={stats.total}
+            <div className="text-[10px] text-slate-500 px-3 mb-1 mt-4 tracking-[0.18em] uppercase font-semibold">觀看狀態</div>
+            <SidebarItem icon="circle" label="全部" count={stats.total}
               active={statusFilter === "all"} onClick={() => setStatusFilter("all")} />
-            <SidebarItem icon="🆕" label="未看" count={stats.unwatched}
+            <SidebarItem icon="unread" label="未看" count={stats.unwatched}
               active={statusFilter === "unwatched"} onClick={() => setStatusFilter("unwatched")} />
-            <SidebarItem icon="✓" label="已看過" count={stats.watched}
+            <SidebarItem icon="check" label="已看過" count={stats.watched}
               active={statusFilter === "watched"} onClick={() => setStatusFilter("watched")} />
 
-            <div className="mt-auto pt-4 border-t border-slate-200/60 text-xs text-slate-500 space-y-1.5 px-1">
+            <div className="mt-auto pt-4 border-t border-slate-200/70 text-xs text-slate-500 space-y-1.5 px-1">
               <div className="flex justify-between"><span>總時長</span><span className="text-slate-700 font-medium">{formatHours(stats.totalSec)}</span></div>
-              <div className="flex justify-between"><span>已看</span><span className="text-emerald-600 font-medium">{formatHours(stats.watchedSec)}</span></div>
+              <div className="flex justify-between"><span>已看</span><span className="text-teal-600 font-medium">{formatHours(stats.watchedSec)}</span></div>
               <div className="flex justify-between"><span>剩餘</span><span className="text-amber-600 font-medium">{formatHours(stats.totalSec - stats.watchedSec)}</span></div>
               <div className="mt-2 h-1.5 bg-slate-200/60 rounded-full overflow-hidden">
                 <div className="h-full gradient-bar transition-all" style={{ width: `${progressPct}%` }} />
@@ -716,17 +844,18 @@
           </aside>
 
           <main className="flex-1 p-3 md:p-6 max-w-[1600px]">
-            <div className="flex flex-wrap gap-3 items-center mb-6">
+            <div className="glass-card rounded-2xl p-3 md:p-4 mb-6">
+            <div className="flex flex-wrap gap-3 items-center">
               <div className="relative flex-1 min-w-[240px]">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
                 <input
                   type="text" value={search} onChange={(e) => setSearch(e.target.value)}
                   placeholder="搜尋標題、頻道、摘要、技術 tag..."
-                  className="w-full glass-card rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 text-slate-700 placeholder:text-slate-400"
+                  className="w-full bg-white rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-400 text-slate-700 placeholder:text-slate-400"
                 />
               </div>
               <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
-                className="glass-card rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 cursor-pointer text-slate-700">
+                className="bg-white rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-400 cursor-pointer text-slate-700">
                 <option value="date_desc">📅 日期：新→舊</option>
                 <option value="date_asc">📅 日期：舊→新</option>
                 <option value="score_desc">🔧 落地度：高→低</option>
@@ -735,10 +864,11 @@
                 <option value="duration_desc">⏱ 時長：長→短</option>
               </select>
             </div>
+            </div>
 
             <div className="mb-5">
-              <h2 className="text-2xl font-semibold text-slate-800">
-                {activeFolder === "all" ? "全部影片" : activeFolder}
+              <h2 className="text-2xl font-semibold text-slate-900">
+                {activeFolder === "all" ? "全部學習影片" : activeFolder}
                 <span className="ml-2 text-sm text-slate-500 font-normal">共 {filtered.length} 支</span>
               </h2>
               {(typeFilter !== "all" || statusFilter !== "all") && (
@@ -760,24 +890,25 @@
                 <p>沒有符合條件的影片</p>
                 <button
                   onClick={() => { setSearch(""); setActiveFolder("all"); setStatusFilter("all"); setTypeFilter("all"); }}
-                  className="mt-4 text-sm text-sky-600 hover:underline">清除所有篩選</button>
+                  className="mt-4 text-sm text-teal-700 hover:underline">清除所有篩選</button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 {filtered.map(v => (
                   <VideoCard key={v.id} video={v}
                     isWatched={watched.has(v.id)}
                     onToggleWatched={toggleWatched}
                     onOpenNotes={setEditingNote}
                     onOpenDetails={setDetailsId}
+                    onSendToNotebookLM={sendToNotebookLM}
                     hasNote={!!notes[v.id]}
                   />
                 ))}
               </div>
             )}
 
-            <footer className="mt-12 pt-6 border-t border-slate-200/60 text-xs text-slate-400 text-center">
-              Phase 3 完成 · {stats.summarized}/{stats.total} 支已 AI 摘要 · Powered by Gemini 2.5 Flash
+            <footer className="mt-12 pt-6 border-t border-slate-200/70 text-xs text-slate-400 text-center">
+              {stats.summarized}/{stats.total} 支已 AI 摘要 · Powered by Gemini 2.5 Flash
             </footer>
           </main>
 
@@ -788,6 +919,22 @@
           {detailsId && (
             <DetailsModal video={detailsVideo} onClose={() => setDetailsId(null)} />
           )}
+          {toast && (
+            <div className="fixed bottom-4 left-1/2 z-[60] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-2xl backdrop-blur">
+              <div className="flex items-start gap-3">
+                <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${
+                  toast.tone === "success" ? "bg-teal-50 text-teal-700" : "bg-amber-50 text-amber-700"
+                }`}>
+                  {toast.tone === "success" ? "✓" : "!"}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-slate-900">{toast.title}</div>
+                  <div className="mt-0.5 text-xs leading-relaxed text-slate-600">{toast.message}</div>
+                </div>
+              </div>
+            </div>
+          )}
+          </div>
         </div>
       );
     }
