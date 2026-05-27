@@ -1,0 +1,150 @@
+{
+  "name": "Auto update AI YouTube collection Docker",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "e5a817c4-1dbb-42c7-8d88-dd8be31633a1",
+      "name": "Every 6 Hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "command": "set -eu\nPROJECT_DIR=\"${PROJECT_DIR:-/workspace/ai-youtube-collection}\"\ngit config --global --add safe.directory \"$PROJECT_DIR\" || true\ncd \"$PROJECT_DIR\"\ngit pull --ff-only\npython3 -m pip install -r requirements.txt\npython3 scripts/fetch_playlists.py\npython3 scripts/summarize.py\nCHANGES=\"$(git status --porcelain -- config.json data/videos.js)\"\nif [ -z \"$CHANGES\" ]; then\n  echo \"NO_CHANGES\"\n  exit 0\nfi\ngit add config.json data/videos.js\ngit commit -m \"Auto update YouTube video collection\"\ngit push\necho \"UPDATED\""
+      },
+      "id": "99f8467e-2938-4f03-95a5-7233f40593c3",
+      "name": "Fetch, Summarize, Commit, Push",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "e0c1a6f9-a3ad-4bda-a0d8-4ba2eda42e89",
+              "leftValue": "={{ $json.stdout }}",
+              "rightValue": "UPDATED",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ec371a66-8856-47c0-bfb7-444a8bd9112d",
+      "name": "Was Updated?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://ai-youtube-collection.vercel.app/",
+        "options": {}
+      },
+      "id": "ae6a30f3-f00e-4433-8356-c61c68958f7f",
+      "name": "Check Website",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1020,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { status: 'No new playlist changes detected.' } }];"
+      },
+      "id": "98de2597-9c6e-4f21-b934-1c12eaebde02",
+      "name": "No Changes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1020,
+        400
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every 6 Hours": {
+      "main": [
+        [
+          {
+            "node": "Fetch, Summarize, Commit, Push",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch, Summarize, Commit, Push": {
+      "main": [
+        [
+          {
+            "node": "Was Updated?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Was Updated?": {
+      "main": [
+        [
+          {
+            "node": "Check Website",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Changes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b3ec2e9d-1fd4-4fc5-b317-d6cf78ff1392",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "auto-update-ai-youtube-collection-docker",
+  "tags": []
+}

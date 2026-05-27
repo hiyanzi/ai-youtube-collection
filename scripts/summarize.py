@@ -163,6 +163,37 @@ def is_summarized(video: dict) -> bool:
     return bool(video.get("summary"))
 
 
+def build_long_video_fallback(video: dict) -> dict:
+    title = video.get("title") or "這支影片"
+    folders = video.get("allFolders") or []
+    tags = list(dict.fromkeys([*folders, "Long Video", "Gemini Token Limit"]))[:6]
+    return {
+        "summary": (
+            f"這支影片「{title}」因影片內容或可解析文字過長，超過 Gemini 單次分析上限。"
+            "系統已保留影片基本資料並標記為超長影片，避免自動更新流程重複卡住。"
+        ),
+        "key_points": [
+            "影片內容過長，無法由 Gemini 一次完整分析。",
+            "已保留標題、頻道、播放清單與影片連結。",
+            "如需高品質摘要，可手動提供章節、逐字稿片段或分段摘要。",
+        ],
+        "topics": tags,
+        "content_type": "discussion",
+        "has_code": None,
+        "has_real_company_case": None,
+        "company_mentioned": None,
+        "production_signals": {
+            "discusses_cost": False,
+            "discusses_latency": False,
+            "discusses_reliability": False,
+            "discusses_evaluation": False,
+            "discusses_failure_modes": False,
+        },
+        "practicality_score": 3,
+        "abstraction_level": "mixed",
+    }
+
+
 # ---------- Gemini call ----------
 def summarize_video(client, video: dict, model: str) -> Optional[dict]:
     """呼叫 Gemini 摘要單支影片，回傳 dict 或 None（失敗）。"""
@@ -194,7 +225,14 @@ def summarize_video(client, video: dict, model: str) -> Optional[dict]:
         print(f"     ⚠️  JSON 解析失敗：{e}")
         return None
     except Exception as e:
-        print(f"     ❌ {type(e).__name__}: {str(e)[:200]}")
+        message = str(e)
+        if (
+            "input token count exceeds" in message.lower()
+            or "exceeds the maximum number of tokens" in message.lower()
+        ):
+            print("     ⚠️  影片內容超過 Gemini token 上限，改用 fallback 摘要")
+            return build_long_video_fallback(video)
+        print(f"     ❌ {type(e).__name__}: {message[:200]}")
         return None
 
 
