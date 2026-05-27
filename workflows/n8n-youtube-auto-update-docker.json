@@ -23,7 +23,7 @@
     },
     {
       "parameters": {
-        "command": "set -eu\nPROJECT_DIR=\"${PROJECT_DIR:-/workspace/ai-youtube-collection}\"\ngit config --global --add safe.directory \"$PROJECT_DIR\" || true\ncd \"$PROJECT_DIR\"\ngit pull --ff-only\npython3 -m pip install -r requirements.txt\npython3 scripts/fetch_playlists.py\npython3 scripts/summarize.py\nCHANGES=\"$(git status --porcelain -- config.json data/videos.js)\"\nif [ -z \"$CHANGES\" ]; then\n  echo \"NO_CHANGES\"\n  exit 0\nfi\ngit add config.json data/videos.js\ngit commit -m \"Auto update YouTube video collection\"\ngit push\necho \"UPDATED\""
+        "command": "set -eu\nPROJECT_DIR=\"${PROJECT_DIR:-/workspace/ai-youtube-collection}\"\ngit config --global --add safe.directory \"$PROJECT_DIR\" || true\ngit config --global user.name \"n8n Auto Update\"\ngit config --global user.email \"n8n@roylin1985.com\"\ncd \"$PROJECT_DIR\"\ngit pull --ff-only\npython3 -m pip install -r requirements.txt\npython3 scripts/fetch_playlists.py\npython3 scripts/summarize.py\nif git diff --quiet --ignore-space-at-eol -I '^(// Auto-generated|[[:space:]]*\"generated_at\":)' -- config.json data/videos.js; then\n  git restore config.json data/videos.js\n  echo \"NO_CHANGES\"\n  exit 0\nfi\ngit add config.json data/videos.js\ngit commit -m \"Auto update YouTube video collection\"\ngit push\necho \"UPDATED\""
       },
       "id": "99f8467e-2938-4f03-95a5-7233f40593c3",
       "name": "Fetch, Summarize, Commit, Push",

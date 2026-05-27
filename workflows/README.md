@@ -16,8 +16,10 @@
 3. 安裝或確認 Python 套件。
 4. 執行 `scripts/fetch_playlists.py`，重新抓 YouTube 播放清單。
 5. 執行 `scripts/summarize.py`，替新影片產生 AI 摘要與標籤。
-6. 如果 `config.json` 或 `data/videos.js` 有變更，就自動 commit 並 push 到 GitHub。
+6. 如果 `config.json` 或 `data/videos.js` 有真正內容變更，就自動 commit 並 push 到 GitHub。
 7. GitHub 更新後，Vercel 會自動重新部署網站。
+
+`generated_at` 時間戳造成的單純時間變更會被忽略，避免沒有新影片時也一直產生 commit。
 
 ## Docker 版 n8n 設定方式
 
