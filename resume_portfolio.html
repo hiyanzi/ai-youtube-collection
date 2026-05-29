@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI YouTube 知識庫 - 履歷作品集 (STAR版本)</title>
+    <style>
+        /* 基本重置與字體設定 */
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, '微軟正黑體', sans-serif;
+            color: #2D3748;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #EDF2F7;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* 模擬 A4 紙張版面 */
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 25mm 20mm;
+            margin: 15mm auto;
+            background: #FFFFFF;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* 列印時的樣式設定 */
+        @media print {
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            body { 
+                background: #FFFFFF; 
+            }
+            .a4-page {
+                margin: 0;
+                box-shadow: none;
+                width: 100%;
+                min-height: auto;
+                padding: 20mm;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        /* 標題區塊 */
+        .header {
+            border-bottom: 2px solid #3182CE;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header h1 { 
+            font-size: 28px; 
+            color: #1A202C; 
+            margin: 0 0 5px 0;
+            letter-spacing: 1px;
+        }
+        .header .subtitle {
+            font-size: 16px;
+            color: #4A5568;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        /* 技術棧標籤 */
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 25px;
+        }
+        .tech-badge {
+            background-color: #EBF8FF;
+            color: #2B6CB0;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            border: 1px solid #BEE3F8;
+        }
+
+        /* 區塊標題 */
+        .section-title { 
+            font-size: 18px;
+            font-weight: bold; 
+            color: #2B6CB0;
+            margin-top: 25px; 
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 5px;
+            height: 18px;
+            background-color: #3182CE;
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+
+        /* 內容區塊 */
+        .content-block {
+            margin-bottom: 20px;
+        }
+        p { 
+            margin: 0 0 12px 0; 
+            font-size: 14.5px; 
+            text-align: justify;
+        }
+        ul { 
+            margin-top: 0; 
+            padding-left: 20px; 
+        }
+        li { 
+            font-size: 14.5px; 
+            margin-bottom: 12px; 
+            text-align: justify;
+        }
+        
+        /* 強調文字 */
+        .highlight { 
+            font-weight: bold; 
+            color: #2C5282; 
+        }
+
+        /* 浮動提示框 (網頁版顯示) */
+        .print-btn-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .print-btn {
+            background-color: #3182CE;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: background-color 0.2s;
+        }
+        .print-btn:hover {
+            background-color: #2B6CB0;
+        }
+        .instructions {
+            text-align: center;
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="print-btn-container no-print">
+        <button class="print-btn" onclick="window.print()">🖨️ 儲存為 PDF / 列印</button>
+        <p class="instructions">點擊上方按鈕，或按下 Ctrl+P，並將目的地選擇為「另存為 PDF」。<br>此為採用 STAR 原則的版本，版面已專門為 A4 紙張最佳化。</p>
+    </div>
+
+    <div class="a4-page">
+        
+        <div class="header">
+            <h1>AI YouTube 影音知識庫</h1>
+            <p class="subtitle">獨立全端開發者專案 | AI-Powered YouTube Knowledge Base</p>
+        </div>
+
+        <div class="tech-stack">
+            <span class="tech-badge">Python</span>
+            <span class="tech-badge">React</span>
+            <span class="tech-badge">Tailwind CSS</span>
+            <span class="tech-badge">Gemini 2.5 Flash API</span>
+            <span class="tech-badge">YouTube Data API</span>
+            <span class="tech-badge">Vercel</span>
+        </div>
+
+        <div class="content-block">
+            <div class="section-title">背景與挑戰 (Situation & Task)</div>
+            <p>為了解決 YouTube 播放清單中收藏了上百支 AI 教學影片卻難以分類、過濾與消化的高學習門檻，決定打造一套全自動化的知識管理工具。核心挑戰在於如何將大量且非結構化的影片內容，轉化為客觀可搜尋的量化指標，藉此快速判斷每支影片的真實學習價值。</p>
+        </div>
+
+        <div class="content-block">
+            <div class="section-title">解決方案與行動 (Action)</div>
+            <ul>
+                <li><span class="highlight">AI 自動化解析管線：</span> 開發 Python 腳本串接 YouTube API 獲取影片元數據，並創新地利用 Gemini 2.5 Flash 直接讀取影片 URL 進行多模態深度分析，成功省去建立複雜字幕爬蟲工程的開發成本。</li>
+                <li><span class="highlight">Prompt 系統工程優化：</span> 針對 LLM 容易產生幻覺 (Hallucination) 與過度解讀的現象，設計了嚴格的 Prompt 條件。例如：規定影片需專門討論特定技術 30 秒以上才可計分，成功將非結構化的內容轉化為客觀的「落地度評分 (0-10)」與「技術標籤」。</li>
+                <li><span class="highlight">系統穩定與容錯設計：</span> 針對長時間執行的批次 API 請求，自主實作了斷點續傳機制，有效避免因網路中斷或免費 Quota 用盡而流失資料，確保資料處理任務具備 Production 等級的穩定性。</li>
+                <li><span class="highlight">輕量化無後端前端架構：</span> 採用 Serverless 的設計理念，前端以單一 React 檔案結合 CDN 與 localStorage 實現使用者狀態持久化，不僅達成「極致輕量」，更確保了系統長期零維護成本與快速的讀取效能。</li>
+            </ul>
+        </div>
+
+        <div class="content-block">
+            <div class="section-title">專案成果 (Result)</div>
+            <p>成功將 13 個零散、無組織的播放清單整合為一個具備「跨欄位關鍵字搜尋」與「三層維度篩選」的高效知識庫網站。透過流程與模型調優，將單支影片的 AI 處理成本極致壓縮至不到 $0.03 美元，大幅提升了個人對新技術的學習與檢索效率，並成功透過 Vercel 實現自動化 CI/CD 部署上線。</p>
+        </div>
+
+    </div>
+
+</body>
+</html>

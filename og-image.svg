@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="100%" stop-color="#f1f5f9" />
+    </linearGradient>
+    <radialGradient id="orb1" cx="0.15" cy="0.1" r="0.6">
+      <stop offset="0%" stop-color="#7dd3fc" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="orb2" cx="0.85" cy="0.9" r="0.5">
+      <stop offset="0%" stop-color="#c4b5fd" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#c4b5fd" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="titleGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+    <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.06" />
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <rect width="1200" height="630" fill="url(#orb1)" />
+  <rect width="1200" height="630" fill="url(#orb2)" />
+
+  <!-- Glass card decorations (right side) -->
+  <g filter="url(#cardShadow)" opacity="0.85">
+    <rect x="780" y="120" width="320" height="180" rx="20"
+          fill="rgba(255,255,255,0.7)" stroke="rgba(226,232,240,0.8)" stroke-width="1" />
+    <rect x="800" y="140" width="280" height="100" rx="10" fill="#e0f2fe" />
+    <rect x="800" y="252" width="160" height="14" rx="3" fill="#cbd5e1" />
+    <rect x="800" y="274" width="100" height="10" rx="3" fill="#e2e8f0" />
+  </g>
+
+  <g filter="url(#cardShadow)" opacity="0.75">
+    <rect x="820" y="330" width="320" height="180" rx="20"
+          fill="rgba(255,255,255,0.7)" stroke="rgba(226,232,240,0.8)" stroke-width="1" />
+    <rect x="840" y="350" width="280" height="100" rx="10" fill="#ede9fe" />
+    <rect x="840" y="462" width="180" height="14" rx="3" fill="#cbd5e1" />
+    <rect x="840" y="484" width="120" height="10" rx="3" fill="#e2e8f0" />
+  </g>
+
+  <!-- Main text -->
+  <text x="80" y="180" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        font-size="56" fill="#0f172a">🎬</text>
+
+  <text x="80" y="270" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        font-size="76" font-weight="800" fill="#0f172a" letter-spacing="-2">
+    AI YouTube
+  </text>
+  <text x="80" y="350" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        font-size="76" font-weight="800" fill="url(#titleGrad)" letter-spacing="-2">
+    影片收藏 ✨
+  </text>
+
+  <text x="80" y="410" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        font-size="28" fill="#475569">
+    AI 自動摘要 · 落地度評分 · 智慧分類
+  </text>
+
+  <text x="80" y="450" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        font-size="24" fill="#64748b">
+    從「saved」到「used」— 把 100+ 支 AI 影片變成可導航知識庫
+  </text>
+
+  <!-- Stats row -->
+  <g transform="translate(80, 510)">
+    <rect width="180" height="50" rx="12" fill="rgba(255,255,255,0.7)" stroke="#cbd5e1" stroke-width="1" />
+    <text x="20" y="33" font-family="-apple-system, sans-serif" font-size="20" font-weight="600" fill="#0284c7">47</text>
+    <text x="55" y="33" font-family="-apple-system, sans-serif" font-size="16" fill="#475569">支 AI 摘要</text>
+  </g>
+
+  <g transform="translate(280, 510)">
+    <rect width="200" height="50" rx="12" fill="rgba(255,255,255,0.7)" stroke="#cbd5e1" stroke-width="1" />
+    <text x="20" y="33" font-family="-apple-system, sans-serif" font-size="20" font-weight="600" fill="#7c3aed">$1.27</text>
+    <text x="80" y="33" font-family="-apple-system, sans-serif" font-size="16" fill="#475569">總成本</text>
+  </g>
+
+  <g transform="translate(500, 510)">
+    <rect width="180" height="50" rx="12" fill="rgba(255,255,255,0.7)" stroke="#cbd5e1" stroke-width="1" />
+    <text x="20" y="33" font-family="-apple-system, sans-serif" font-size="20" font-weight="600" fill="#059669">Gemini</text>
+    <text x="115" y="33" font-family="-apple-system, sans-serif" font-size="16" fill="#475569">2.5 Flash</text>
+  </g>
+
+  <!-- Bottom URL -->
+  <text x="80" y="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Monaco, monospace"
+        font-size="16" fill="#94a3b8">
+    ai-youtube-collection.vercel.app
+  </text>
+</svg>

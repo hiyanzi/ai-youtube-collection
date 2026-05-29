@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 學習影片 — YouTube AI 知識庫</title>
+  <meta name="description" content="我的 AI 知識庫 — 收藏 AI YouTube 影片、AI 自動摘要、做筆記、追蹤學習進度。" />
+
+  <!-- Open Graph / Facebook / LINE / Slack 等 -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://ai-youtube-collection.vercel.app/" />
+  <meta property="og:title" content="AI 學習影片 — YouTube AI 知識庫" />
+  <meta property="og:description" content="我的 AI 知識庫 — 收藏 AI YouTube 影片、AI 自動摘要、做筆記、追蹤學習進度。" />
+  <meta property="og:image" content="https://ai-youtube-collection.vercel.app/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="zh_TW" />
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="AI 學習影片 — YouTube AI 知識庫" />
+  <meta name="twitter:description" content="我的 AI 知識庫 — YouTube 影片學習與筆記。" />
+  <meta name="twitter:image" content="https://ai-youtube-collection.vercel.app/og-image.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- 影片資料：由 fetch_playlists.py / summarize.py 自動產生 -->
+  <script src="./data/videos.js"></script>
+  <style>
+    body {
+      font-family: "Inter", "Noto Sans TC", system-ui, -apple-system, sans-serif;
+      background: #FFFFFF;
+      min-height: 100vh;
+      color: #37352F;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .scroll-hide::-webkit-scrollbar { width: 4px; height: 4px; }
+    .scroll-hide::-webkit-scrollbar-track { background: transparent; }
+    .scroll-hide::-webkit-scrollbar-thumb { background: #E9E9E7; border-radius: 2px; }
+    .scroll-hide::-webkit-scrollbar-thumb:hover { background: #D4D4D8; }
+
+    /* Light SaaS Card */
+    .os-card {
+      background: #FFFFFF;
+      border: 1px solid #E9E9E7;
+      transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    }
+    .os-card:hover {
+      border-color: #D4D4D8;
+      box-shadow: 0 4px 12px rgba(55, 53, 47, 0.04);
+    }
+
+    .watched-card { opacity: 0.5; filter: grayscale(1); }
+    .watched-card:hover { opacity: 0.9; filter: grayscale(0.5); }
+
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .line-clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .orb { display: none; }
+  </style>
+</head>
+<body class="text-[#37352F] bg-[#FFFFFF] selection:bg-[#E9E9E7] selection:text-[#111111] min-h-screen flex flex-col">
+  <div id="root" class="relative z-10"></div>
+
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect, useMemo } = React;
+
+    // ====== 資料：載自 data/videos.js（由 fetch_playlists.py + summarize.py 產生）======
+    if (!window.VIDEOS_DATA) {
+      document.getElementById("root").innerHTML =
+        '<div style="padding:60px;text-align:center;font-family:sans-serif;color:#475569">' +
+        '<div style="font-size:48px;margin-bottom:16px">⚠️</div>' +
+        '<h2 style="font-size:20px;margin-bottom:8px">尚未產生影片資料</h2>' +
+        '<p style="margin-bottom:16px">請先執行：</p>' +
+        '<code style="background:#0f172a;color:#f1f5f9;padding:8px 16px;border-radius:8px">python scripts/fetch_playlists.py</code>' +
+        '</div>';
+      throw new Error("Run fetch_playlists.py first");
+    }
+    const VIDEOS_DATA = window.VIDEOS_DATA;
+
+    // ====== Helpers ======
+    const formatHours = (sec) => {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      return h > 0 ? `${h} 小時 ${m} 分` : `${m} 分`;
+    };
+
+    const CONTENT_TYPE_META = {
+      production_case: { label: "公司案例", emoji: "🏢", color: "text-[#059669] bg-[#ECFDF5] border-[#D1FAE5]" },
+      tutorial:        { label: "實戰教學", emoji: "📚", color: "text-[#2563EB] bg-[#EFF6FF] border-[#DBEAFE]" },
+      demo:            { label: "工具展示", emoji: "🎬", color: "text-[#4F46E5] bg-[#EEF2FF] border-[#E0E7FF]" },
+      theory:          { label: "理論講解", emoji: "🧠", color: "text-[#D97706] bg-[#FFFBEB] border-[#FEF3C7]" },
+      news:            { label: "新聞", emoji: "📰", color: "text-[#4B5563] bg-[#F3F4F6] border-[#E5E7EB]" },
+      discussion:      { label: "討論雜談", emoji: "💬", color: "text-[#E11D48] bg-[#FFF1F2] border-[#FFE4E6]" },
+    };
+
+    const SIGNAL_META = {
+      discusses_cost:          { label: "成本", icon: "💰" },
+      discusses_latency:       { label: "延遲", icon: "⚡" },
+      discusses_reliability:   { label: "可靠性", icon: "🛡" },
+      discusses_evaluation:    { label: "評估方法", icon: "📊" },
+      discusses_failure_modes: { label: "失敗案例", icon: "🔥" },
+    };
+
+    const scoreColor = (score) => {
+      if (score == null) return "text-[#787774] bg-[#F7F7F5] border-[#E9E9E7]";
+      if (score >= 8) return "text-[#059669] bg-[#ECFDF5] border-[#D1FAE5]";
+      if (score >= 5) return "text-[#2563EB] bg-[#EFF6FF] border-[#DBEAFE]";
+      return "text-[#787774] bg-[#F7F7F5] border-[#E9E9E7]";
+    };
+
+    // ====== Components ======
+    function SidebarItem({ icon, label, count, active, onClick }) {
+      return (
+        <button
+          onClick={onClick}
+          className={`w-full text-left px-3 py-1.5 rounded-md flex items-center justify-between transition-colors ${
+            active
+              ? "bg-[#EAEAEA] text-[#111111] font-medium"
+              : "hover:bg-[#F5F5F5] text-[#787774]"
+          }`}
+        >
+          <span className="flex items-center gap-2 min-w-0">
+            <span className="shrink-0 opacity-70 text-xs">{icon}</span>
+            <span className="text-sm truncate">{label}</span>
+          </span>
+          <span className={`text-xs shrink-0 ml-2 ${active ? "text-[#111111]" : "text-[#999999]"}`}>{count}</span>
+        </button>
+      );
+    }
+
+    function ProductionSignals({ signals }) {
+      if (!signals) return null;
+      return (
+        <div className="flex gap-1.5">
+          {Object.entries(SIGNAL_META).map(([key, meta]) => {
+            const on = signals[key];
+            return (
+              <span
+                key={key}
+                title={`${meta.label}：${on ? "✓ 影片有討論" : "未提及"}`}
+                className={`text-xs leading-none transition ${on ? "opacity-100" : "opacity-25 grayscale"}`}
+              >
+                {meta.icon}
+              </span>
+            );
+          })}
+        </div>
+      );
+    }
+
+    function VideoCard({ video, isWatched, onToggleWatched, onOpenNotes, hasNote, onOpenDetails }) {
+      const isUnavailable = video.status === "unavailable";
+      const cardCls = isWatched ? "watched-card" : "";
+      const ct = CONTENT_TYPE_META[video.content_type];
+      const score = video.practicality_score;
+      const hasSummary = !!video.summary;
+
+      return (
+        <div className={`os-card h-full rounded-xl overflow-hidden flex flex-col ${cardCls}`}>
+          {/* 極簡縮圖 */}
+          <div
+            className={`relative w-full aspect-video bg-[#F9F9F8] border-b border-[#E9E9E7] ${!isUnavailable ? "cursor-pointer group" : ""}`}
+            onClick={() => !isUnavailable && window.open(video.url, "_blank")}
+          >
+            {!isUnavailable ? (
+              <img
+                src={video.thumbnail}
+                alt={video.title}
+                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                onError={(e) => { e.target.style.opacity = 0.1; }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-2xl text-zinc-300">🚫</div>
+            )}
+
+            {/* 左上角狀態指示 */}
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleWatched(video.id); }}
+              className="absolute top-2 left-2 z-10 w-5 h-5 flex items-center justify-center rounded bg-[#FFFFFF]/90 border border-[#E9E9E7] hover:border-[#CCCCCC] transition-colors backdrop-blur-sm shadow-sm"
+              title={isWatched ? "標記為未看" : "標記看過"}
+            >
+              {isWatched ? (
+                <div className="w-2.5 h-2.5 rounded-sm bg-[#2563EB] shadow-[0_0_6px_rgba(37,99,235,0.4)]" />
+              ) : (
+                <div className="w-2 h-2 rounded-sm border border-[#CCCCCC]" />
+              )}
+            </button>
+
+            {video.duration && (
+              <span className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-[#FFFFFF]/90 text-[#555555] text-[10px] rounded border border-[#E9E9E7] tracking-wide font-mono backdrop-blur-sm shadow-sm">
+                {video.duration}
+              </span>
+            )}
+            
+            {hasNote && (
+              <span className="absolute top-2 right-2 text-[10px] bg-[#FFFFFF]/90 text-[#555555] px-1.5 py-0.5 rounded border border-[#E9E9E7] backdrop-blur-sm shadow-sm">
+                📝
+              </span>
+            )}
+          </div>
+
+          {/* 內容區 */}
+          <div className="p-4 space-y-3 flex-1 flex flex-col bg-[#FFFFFF]">
+            {/* 標題與重點摘要 */}
+            <div>
+              <h3 
+                className="text-sm font-medium leading-snug line-clamp-2 text-[#111111] cursor-pointer hover:text-[#2563EB] transition-colors"
+                onClick={() => onOpenDetails(video.id)}
+              >
+                {video.title}
+              </h3>
+            </div>
+
+            {/* AI 徽章列 & Tags */}
+            <div className="flex flex-col gap-2 pt-2">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {ct && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${ct.color}`}>
+                    {ct.label}
+                  </span>
+                )}
+                {score != null && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${scoreColor(score)}`}>
+                    Score {score}
+                  </span>
+                )}
+                {video.has_code && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F5F5F5] text-[#787774] border border-[#E9E9E7]">
+                    {`<Code />`}
+                  </span>
+                )}
+              </div>
+              
+              {video.tags && video.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {video.tags.slice(0, 3).map(t => (
+                    <span key={t} className="px-1.5 py-0.5 bg-[#F5F5F5] text-[#666666] text-[10px] rounded border border-[#E9E9E7]">
+                      {t}
+                    </span>
+                  ))}
+                  {video.tags.length > 3 && (
+                    <span className="px-1.5 py-0.5 text-[10px] text-[#999999]">+{video.tags.length - 3}</span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 底部 Metadata 與動作 */}
+            <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#F5F5F5] mt-auto">
+              <div className="text-[10px] text-[#999999] flex items-center gap-1.5 truncate">
+                <span className="truncate max-w-[80px]">{video.channel || "—"}</span>
+                <span>·</span>
+                <span className="shrink-0">{video.publishedAt || "—"}</span>
+              </div>
+              
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => onOpenNotes(video.id)}
+                  className="text-[11px] px-2 py-1 rounded bg-[#F9F9F8] text-[#787774] hover:text-[#111111] hover:bg-[#EAEAEA] border border-[#E9E9E7] transition-colors shadow-sm"
+                  title="筆記"
+                >
+                  Notes
+                </button>
+                <button
+                  onClick={() => onOpenDetails(video.id)}
+                  className="text-[11px] px-2 py-1 rounded bg-[#F9F9F8] text-[#787774] hover:text-[#111111] hover:bg-[#EAEAEA] border border-[#E9E9E7] transition-colors shadow-sm"
+                  title="完整資訊"
+                >
+                  View
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function NoteModal({ video, currentNote, onSave, onClose }) {
+      const [text, setText] = useState(currentNote || "");
+      if (!video) return null;
+      return (
+        <>
+          <div className="fixed inset-0 bg-[#111111]/40 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
+          <div className="fixed inset-y-0 right-0 w-full max-w-lg bg-[#FFFFFF] border-l border-[#E9E9E7] shadow-2xl z-50 flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b border-[#E9E9E7] flex justify-between items-start">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-xs px-2 py-0.5 bg-[#F5F5F5] text-[#787774] border border-[#E9E9E7] rounded">Note Editor</span>
+                </div>
+                <h3 className="text-sm text-[#111111] font-medium leading-snug line-clamp-2">{video.title}</h3>
+              </div>
+              <button onClick={onClose} className="text-[#787774] hover:text-[#111111] p-1">✕</button>
+            </div>
+            <div className="p-5 flex-1 overflow-y-auto">
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Write your research notes here..."
+                className="w-full h-full min-h-[300px] bg-transparent text-[#111111] text-sm leading-relaxed focus:outline-none resize-none placeholder:text-[#999999]"
+                autoFocus
+              />
+            </div>
+            <div className="p-4 border-t border-[#E9E9E7] flex justify-between items-center bg-[#F9F9F8]">
+              <p className="text-[10px] text-[#999999]">Local storage only</p>
+              <div className="flex gap-2">
+                <button onClick={onClose} className="px-3 py-1.5 text-xs text-[#787774] hover:bg-[#F5F5F5] rounded-md transition-colors border border-transparent hover:border-[#CCCCCC]">
+                  Cancel
+                </button>
+                <button
+                  onClick={() => { onSave(video.id, text); onClose(); }}
+                  className="px-4 py-1.5 text-xs bg-[#111111] text-[#FFFFFF] hover:bg-[#333333] rounded-md transition-colors font-medium shadow-sm"
+                >
+                  Save Note
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    function DetailsModal({ video, onClose }) {
+      if (!video) return null;
+      const ct = CONTENT_TYPE_META[video.content_type];
+      const sig = video.production_signals || {};
+      return (
+        <>
+          <div className="fixed inset-0 bg-[#111111]/40 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
+          <div className="fixed inset-y-0 right-0 w-full max-w-xl bg-[#FFFFFF] border-l border-[#E9E9E7] shadow-2xl z-50 flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b border-[#E9E9E7] flex justify-between items-start">
+              <div className="pr-8">
+                <h3 className="font-semibold text-lg text-[#111111] leading-tight">{video.title}</h3>
+                <div className="text-xs text-[#787774] mt-3 flex flex-wrap gap-x-4 gap-y-2">
+                  <span className="flex items-center gap-1"><span className="opacity-50">CHANNEL</span> {video.channel}</span>
+                  <span className="flex items-center gap-1"><span className="opacity-50">DATE</span> {video.publishedAt}</span>
+                  <span className="flex items-center gap-1"><span className="opacity-50">DURATION</span> {video.duration}</span>
+                  <span className="flex items-center gap-1"><span className="opacity-50">DIR</span> {video.allFolders?.join(" / ")}</span>
+                </div>
+              </div>
+              <button onClick={onClose} className="text-[#787774] hover:text-[#111111] p-1 absolute top-6 right-6">✕</button>
+            </div>
+
+            <div className="p-6 space-y-8 flex-1 overflow-y-auto scroll-hide bg-[#FFFFFF]">
+              {/* AI 標籤組 */}
+              <div className="flex flex-wrap gap-2">
+                {ct && (
+                  <span className={`text-[10px] px-2 py-1 rounded border font-medium uppercase tracking-wider ${ct.color}`}>
+                    {ct.label}
+                  </span>
+                )}
+                {video.practicality_score != null && (
+                  <span className={`text-[10px] px-2 py-1 rounded border font-semibold uppercase tracking-wider ${scoreColor(video.practicality_score)}`}>
+                    Actionability {video.practicality_score}/10
+                  </span>
+                )}
+                {video.abstraction_level && (
+                  <span className="text-[10px] px-2 py-1 rounded bg-[#F5F5F5] text-[#787774] border border-[#E9E9E7] uppercase tracking-wider">
+                    {video.abstraction_level}
+                  </span>
+                )}
+                {video.has_code && (
+                  <span className="text-[10px] px-2 py-1 rounded bg-[#F5F5F5] text-[#787774] border border-[#E9E9E7] uppercase tracking-wider">Has Code</span>
+                )}
+                {video.has_real_company_case && (
+                  <span className="text-[10px] px-2 py-1 rounded text-[#059669] bg-[#ECFDF5] border border-[#D1FAE5] uppercase tracking-wider">
+                    Case Study{video.company_mentioned ? `: ${video.company_mentioned}` : ""}
+                  </span>
+                )}
+              </div>
+
+              {/* 摘要 */}
+              {video.summary && (
+                <div>
+                  <div className="text-[10px] font-bold text-[#999999] mb-2 tracking-widest uppercase">Summary</div>
+                  <p className="text-sm text-[#555555] leading-relaxed">{video.summary}</p>
+                </div>
+              )}
+
+              {/* 重點 */}
+              {video.key_points?.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-bold text-[#999999] mb-2 tracking-widest uppercase">Key Takeaways</div>
+                  <ul className="space-y-2">
+                    {video.key_points.map((kp, i) => (
+                      <li key={i} className="text-sm text-[#555555] flex gap-3">
+                        <span className="text-[#2563EB] shrink-0 mt-0.5">▪</span>
+                        <span className="leading-relaxed">{kp}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* tags */}
+              {video.tags?.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-bold text-[#999999] mb-2 tracking-widest uppercase">Tech Stack</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {video.tags.map(t => (
+                      <span key={t} className="px-2 py-1 bg-[#F5F5F5] text-[#787774] text-[10px] rounded border border-[#E9E9E7]">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 生產考量 */}
+              {video.production_signals && (
+                <div>
+                  <div className="text-[10px] font-bold text-[#999999] mb-2 tracking-widest uppercase">Production Signals</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(SIGNAL_META).map(([key, meta]) => {
+                      const on = sig[key];
+                      return (
+                        <div key={key} className={`text-xs px-3 py-2 rounded-md border flex items-center gap-2 ${
+                          on ? "text-[#059669] border-[#D1FAE5] bg-[#ECFDF5]" : "text-[#999999] border-transparent bg-[#F9F9F8]"
+                        }`}>
+                          <span className="font-medium">{meta.label}</span>
+                          <span className="ml-auto">{on ? "✓" : ""}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-[#E9E9E7] flex justify-between gap-2 bg-[#F9F9F8]">
+              <a href={video.url} target="_blank" rel="noopener noreferrer"
+                 className="px-4 py-2 text-xs bg-[#111111] text-[#FFFFFF] hover:bg-[#333333] rounded-md transition-colors font-medium">
+                Open YouTube
+              </a>
+              <button onClick={onClose} className="px-4 py-2 text-xs text-[#787774] hover:bg-[#EAEAEA] border border-transparent hover:border-[#CCCCCC] rounded-md transition-colors">
+                Close
+              </button>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    function AboutModal({ stats, onClose }) {
+      return (
+        <>
+          <div className="fixed inset-0 bg-[#111111]/40 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
+          <div className="fixed inset-y-0 right-0 w-full max-w-md bg-[#FFFFFF] border-l border-[#E9E9E7] shadow-2xl z-50 flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b border-[#E9E9E7]">
+              <h3 className="text-lg font-bold text-[#111111]">Knowledge OS</h3>
+              <p className="text-[11px] text-[#787774] mt-1 tracking-widest uppercase">System Analytics</p>
+            </div>
+
+            <div className="p-6 space-y-8 flex-1 overflow-y-auto scroll-hide">
+              <div>
+                <div className="text-[10px] font-bold text-[#999999] mb-3 tracking-widest uppercase">Database Stats</div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-[#F9F9F8] border border-[#E9E9E7] rounded-lg p-3 text-center">
+                    <div className="text-xl font-bold text-[#111111]">{stats.total}</div>
+                    <div className="text-[10px] text-[#787774] mt-1">Videos</div>
+                  </div>
+                  <div className="bg-[#F9F9F8] border border-[#E9E9E7] rounded-lg p-3 text-center">
+                    <div className="text-xl font-bold text-[#2563EB]">{stats.summarized}</div>
+                    <div className="text-[10px] text-[#787774] mt-1">AI Indexed</div>
+                  </div>
+                  <div className="bg-[#F9F9F8] border border-[#E9E9E7] rounded-lg p-3 text-center">
+                    <div className="text-xl font-bold text-[#059669]">{Math.floor(stats.totalSec / 3600)}</div>
+                    <div className="text-[10px] text-[#787774] mt-1">Hours</div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[10px] font-bold text-[#999999] mb-2 tracking-widest uppercase">System Purpose</div>
+                <p className="text-sm text-[#555555] leading-relaxed">
+                  A high-performance environment for AI engineers to manage, filter, and extract value from technical video content without context switching.
+                </p>
+              </div>
+
+              <div>
+                <div className="text-[10px] font-bold text-[#999999] mb-2 tracking-widest uppercase">Architecture</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {["Python", "YouTube Data API", "Gemini 2.5 Flash", "React", "Vercel", "Tailwind (Light SaaS)"].map(t => (
+                    <span key={t} className="px-2 py-1 bg-[#F5F5F5] text-[#787774] text-[10px] rounded border border-[#E9E9E7]">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[10px] font-bold text-[#999999] mb-2 tracking-widest uppercase">Cost Analysis</div>
+                <p className="text-sm text-[#555555] leading-relaxed">
+                  Total index cost for {stats.summarized} videos: ~$1.27. Marginal cost: ~$0.03/video via Gemini Flash.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-[#E9E9E7] flex justify-end gap-2 bg-[#F9F9F8]">
+              <button onClick={onClose} className="px-4 py-2 text-xs bg-[#111111] text-[#FFFFFF] hover:bg-[#333333] rounded-md transition-colors font-medium">
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    function App() {
+      const [search, setSearch] = useState("");
+      const [activeFolder, setActiveFolder] = useState("all");
+      const [statusFilter, setStatusFilter] = useState("all");
+      const [typeFilter, setTypeFilter] = useState("all");
+      const [sortBy, setSortBy] = useState("date_desc");
+      const [editingNote, setEditingNote] = useState(null);
+      const [detailsId, setDetailsId] = useState(null);
+      const [showAbout, setShowAbout] = useState(false);
+
+      const [watched, setWatched] = useState(() => {
+        try { return new Set(JSON.parse(localStorage.getItem("aiyt_watched") || "[]")); }
+        catch { return new Set(); }
+      });
+      const [notes, setNotes] = useState(() => {
+        try { return JSON.parse(localStorage.getItem("aiyt_notes") || "{}"); }
+        catch { return {}; }
+      });
+
+      useEffect(() => { localStorage.setItem("aiyt_watched", JSON.stringify([...watched])); }, [watched]);
+      useEffect(() => { localStorage.setItem("aiyt_notes", JSON.stringify(notes)); }, [notes]);
+
+      const toggleWatched = (id) => {
+        setWatched(prev => {
+          const next = new Set(prev);
+          next.has(id) ? next.delete(id) : next.add(id);
+          return next;
+        });
+      };
+
+      const saveNote = (id, text) => {
+        setNotes(prev => {
+          const next = { ...prev };
+          if (text.trim()) next[id] = text;
+          else delete next[id];
+          return next;
+        });
+      };
+
+      const folderCounts = useMemo(() => {
+        const counts = {};
+        VIDEOS_DATA.videos.forEach(v => {
+          v.allFolders?.forEach(f => { counts[f] = (counts[f] || 0) + 1; });
+        });
+        return counts;
+      }, []);
+
+      const typeCounts = useMemo(() => {
+        const counts = {};
+        VIDEOS_DATA.videos.forEach(v => {
+          if (v.content_type) counts[v.content_type] = (counts[v.content_type] || 0) + 1;
+        });
+        return counts;
+      }, []);
+
+      const filtered = useMemo(() => {
+        let list = VIDEOS_DATA.videos;
+        if (activeFolder !== "all") list = list.filter(v => v.allFolders?.includes(activeFolder));
+        if (typeFilter !== "all") list = list.filter(v => v.content_type === typeFilter);
+        if (search) {
+          const q = search.toLowerCase();
+          list = list.filter(v =>
+            v.title.toLowerCase().includes(q) ||
+            (v.channel || "").toLowerCase().includes(q) ||
+            (v.summary || "").toLowerCase().includes(q) ||
+            (v.tags || []).some(t => t.toLowerCase().includes(q))
+          );
+        }
+        if (statusFilter === "watched") list = list.filter(v => watched.has(v.id));
+        else if (statusFilter === "unwatched") list = list.filter(v => !watched.has(v.id) && v.status === "available");
+
+        return [...list].sort((a, b) => {
+          switch (sortBy) {
+            case "date_desc": return (b.publishedAt || "").localeCompare(a.publishedAt || "");
+            case "date_asc":  return (a.publishedAt || "").localeCompare(b.publishedAt || "");
+            case "duration_asc":  return (a.durationSeconds || 0) - (b.durationSeconds || 0);
+            case "duration_desc": return (b.durationSeconds || 0) - (a.durationSeconds || 0);
+            case "score_desc": return (b.practicality_score ?? -1) - (a.practicality_score ?? -1);
+            case "score_asc":  return (a.practicality_score ?? 99) - (b.practicality_score ?? 99);
+            default: return 0;
+          }
+        });
+      }, [search, activeFolder, statusFilter, typeFilter, sortBy, watched]);
+
+      const stats = useMemo(() => {
+        const av = VIDEOS_DATA.videos.filter(v => v.status === "available");
+        const w = av.filter(v => watched.has(v.id));
+        const summarized = av.filter(v => v.summary).length;
+        return {
+          total: av.length,
+          watched: w.length,
+          unwatched: av.length - w.length,
+          summarized,
+          totalSec: av.reduce((s, v) => s + (v.durationSeconds || 0), 0),
+          watchedSec: w.reduce((s, v) => s + (v.durationSeconds || 0), 0),
+        };
+      }, [watched]);
+
+      const detailsVideo = detailsId ? VIDEOS_DATA.videos.find(v => v.id === detailsId) : null;
+      const editingVideo = editingNote ? VIDEOS_DATA.videos.find(v => v.id === editingNote) : null;
+      const progressPct = stats.total > 0 ? Math.round((stats.watched / stats.total) * 100) : 0;
+
+      return (
+        <div className="min-h-screen flex bg-[#FFFFFF] text-[#111111]">
+          <aside className="w-56 bg-[#F9F9F8] border-r border-[#E9E9E7] py-6 px-4 flex flex-col gap-1 sticky top-0 h-screen overflow-y-auto scroll-hide">
+            <div className="mb-6 px-1">
+              <h1 className="text-[13px] uppercase tracking-widest font-bold text-[#111111] mb-1">Knowledge OS</h1>
+              <p className="text-[11px] text-[#787774]">AI Engineer Second Brain</p>
+            </div>
+
+            <div className="text-[10px] text-[#888888] px-3 mb-1 mt-1 tracking-wider uppercase font-semibold">Folders</div>
+            <SidebarItem icon="📦" label="All Videos" count={VIDEOS_DATA.videos.length}
+              active={activeFolder === "all"} onClick={() => setActiveFolder("all")} />
+            {Object.entries(folderCounts).sort().map(([f, c]) => (
+              <SidebarItem key={f} icon="📁" label={f} count={c}
+                active={activeFolder === f} onClick={() => setActiveFolder(f)} />
+            ))}
+
+            <div className="text-[10px] text-[#888888] px-3 mb-1 mt-6 tracking-wider uppercase font-semibold">Content Type</div>
+            <SidebarItem icon="🌐" label="All Types" count={stats.summarized}
+              active={typeFilter === "all"} onClick={() => setTypeFilter("all")} />
+            {Object.entries(typeCounts).sort((a, b) => b[1] - a[1]).map(([t, c]) => {
+              const meta = CONTENT_TYPE_META[t];
+              return meta ? (
+                <SidebarItem key={t} icon={meta.emoji} label={meta.label} count={c}
+                  active={typeFilter === t} onClick={() => setTypeFilter(t)} />
+              ) : null;
+            })}
+
+            <div className="text-[10px] text-[#888888] px-3 mb-1 mt-6 tracking-wider uppercase font-semibold">Status</div>
+            <SidebarItem icon="🌐" label="All" count={stats.total}
+              active={statusFilter === "all"} onClick={() => setStatusFilter("all")} />
+            <SidebarItem icon="🆕" label="Todo" count={stats.unwatched}
+              active={statusFilter === "unwatched"} onClick={() => setStatusFilter("unwatched")} />
+            <SidebarItem icon="✓" label="Completed" count={stats.watched}
+              active={statusFilter === "watched"} onClick={() => setStatusFilter("watched")} />
+
+            <div className="mt-auto pt-6 border-t border-[#E9E9E7] text-xs text-[#787774] space-y-1.5 px-1">
+              <div className="flex justify-between"><span>Total Time</span><span className="text-[#111111] font-medium">{formatHours(stats.totalSec)}</span></div>
+              <div className="flex justify-between"><span>Completed</span><span className="text-[#059669] font-medium">{formatHours(stats.watchedSec)}</span></div>
+              <div className="flex justify-between"><span>Remaining</span><span className="text-[#D97706] font-medium">{formatHours(stats.totalSec - stats.watchedSec)}</span></div>
+              <div className="mt-2 h-1 bg-[#EAEAEA] rounded-full overflow-hidden">
+                <div className="h-full bg-[#2563EB] transition-all" style={{ width: `${progressPct}%` }} />
+              </div>
+              <div className="text-center text-[11px] text-[#888888]">
+                {stats.watched}/{stats.total} ({progressPct}%)
+              </div>
+              <div className="text-center text-[10px] text-[#999999] pt-1">
+                AI Scanned: {stats.summarized}/{stats.total}
+              </div>
+              <button
+                onClick={() => setShowAbout(true)}
+                className="w-full mt-2 text-[11px] text-[#787774] hover:text-[#111111] hover:bg-[#EAEAEA] py-1.5 rounded-md transition-colors"
+              >
+                System Information
+              </button>
+            </div>
+          </aside>
+
+          <main className="flex-1 p-8 lg:p-12 max-w-[1600px]">
+            <div className="flex flex-wrap gap-3 items-center mb-8">
+              <div className="relative flex-1 min-w-[240px] group">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#999999] transition-colors group-focus-within:text-[#111111]">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </span>
+                <input
+                  type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search knowledge base..."
+                  className="w-full bg-[#FFFFFF] border border-[#E9E9E7] rounded-md pl-10 pr-12 py-2 text-sm focus:outline-none focus:border-[#CCCCCC] text-[#111111] placeholder:text-[#999999] transition-colors shadow-[0_2px_8px_rgba(55,53,47,0.04)] hover:border-[#CCCCCC]"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] text-[#787774] bg-[#F5F5F5] border border-[#E9E9E7] rounded shadow-sm">⌘</kbd>
+                  <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] text-[#787774] bg-[#F5F5F5] border border-[#E9E9E7] rounded shadow-sm">K</kbd>
+                </div>
+              </div>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
+                className="bg-[#FFFFFF] border border-[#E9E9E7] rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#CCCCCC] text-[#787774] cursor-pointer hover:border-[#CCCCCC] transition-colors shadow-[0_2px_8px_rgba(55,53,47,0.04)]">
+                <option value="date_desc">Latest Additions</option>
+                <option value="date_asc">Oldest First</option>
+                <option value="score_desc">Highest Actionability</option>
+                <option value="score_asc">Lowest Actionability</option>
+                <option value="duration_asc">Shortest Videos</option>
+                <option value="duration_desc">Longest Videos</option>
+              </select>
+            </div>
+
+            <div className="mb-6 flex items-baseline justify-between border-b border-[#E9E9E7] pb-4">
+              <h2 className="text-xl font-semibold text-[#111111] tracking-tight">
+                {activeFolder === "all" ? "All Videos" : activeFolder}
+                <span className="ml-3 text-[13px] text-[#999999] font-medium px-2 py-0.5 bg-[#F5F5F5] rounded-full border border-[#E9E9E7]">{filtered.length}</span>
+              </h2>
+              {(typeFilter !== "all" || statusFilter !== "all") && (
+                <div className="flex gap-2">
+                  {typeFilter !== "all" && CONTENT_TYPE_META[typeFilter] && (
+                    <span className="text-xs px-2 py-1 bg-[#F5F5F5] text-[#787774] border border-[#E9E9E7] rounded-md">
+                      {CONTENT_TYPE_META[typeFilter].label}
+                    </span>
+                  )}
+                  {statusFilter !== "all" && (
+                     <span className="text-xs px-2 py-1 bg-[#F5F5F5] text-[#787774] border border-[#E9E9E7] rounded-md">
+                      {statusFilter === "watched" ? "Completed" : "Todo"}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="text-center py-24 text-[#999999]">
+                <div className="text-4xl mb-4 opacity-30">⊘</div>
+                <p className="text-sm">No videos found matching criteria.</p>
+                <button
+                  onClick={() => { setSearch(""); setActiveFolder("all"); setStatusFilter("all"); setTypeFilter("all"); }}
+                  className="mt-4 text-xs text-[#787774] hover:text-[#111111] transition-colors border border-[#E9E9E7] bg-[#F5F5F5] px-3 py-1.5 rounded-md">Clear Filters</button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {filtered.map(v => (
+                  <VideoCard key={v.id} video={v}
+                    isWatched={watched.has(v.id)}
+                    onToggleWatched={toggleWatched}
+                    onOpenNotes={setEditingNote}
+                    onOpenDetails={setDetailsId}
+                    hasNote={!!notes[v.id]}
+                  />
+                ))}
+              </div>
+            )}
+
+            <footer className="mt-12 pt-6 border-t border-[#E9E9E7] text-xs text-[#999999] flex justify-between items-center">
+              <span>{stats.summarized}/{stats.total} videos summarized</span>
+              <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-[#2563EB] rounded-full animate-pulse"></div> System Online</span>
+            </footer>
+          </main>
+
+          {editingNote && (
+            <NoteModal video={editingVideo} currentNote={notes[editingNote]}
+              onSave={saveNote} onClose={() => setEditingNote(null)} />
+          )}
+          {detailsId && (
+            <DetailsModal video={detailsVideo} onClose={() => setDetailsId(null)} />
+          )}
+          {showAbout && (
+            <AboutModal stats={stats} onClose={() => setShowAbout(false)} />
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
