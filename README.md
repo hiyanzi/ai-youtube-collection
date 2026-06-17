@@ -199,6 +199,24 @@ ai-youtube-collection/
 
 ---
 
+## 🩺 疑難排解
+
+### 整頁只剩淡藍色背景、看不到影片卡片
+
+**原因**：本專案的前端是「瀏覽器內即時編譯」的 React（透過 CDN 載入 React / ReactDOM / Babel，沒有 build step）。如果 CDN 的 script 標籤**沒有鎖版本**，unpkg 會自動給最新版；當 Babel 從 7 升到 8 時，瀏覽器內 `type="text/babel"` 的即時編譯方式不再被支援，整個 App 就不會渲染，只剩底層的淡藍色背景。影片資料（`data/videos.js`）其實完好無損。
+
+**解法**：確保 `index.html` / `preview.html` 的 CDN 連結都有鎖定版本，例如：
+
+```html
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.7/babel.min.js"></script>
+```
+
+⚠️ 千萬不要把版本號拿掉（例如 `@babel/standalone/babel.min.js`），否則 CDN 升級時會再次壞掉。修正後請按 **Ctrl+F5** 強制重新整理清快取。
+
+---
+
 ## 🎯 路線圖
 
 - [x] Phase 0: YouTube 抓取管線

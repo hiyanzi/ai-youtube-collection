@@ -334,6 +334,13 @@ def main():
         print(f"   失敗：{len(failed)} 支 — id: {', '.join(failed[:5])}{'...' if len(failed) > 5 else ''}")
     print(f"\n💡 已自動更新 data/videos.js — 重新整理 preview.html 看新摘要")
 
+    # 更新完自動做網站健康檢查（videos.js 有效 + CDN 版本已鎖定）
+    try:
+        from verify_site import verify
+        verify()
+    except Exception as e:
+        print(f"   （略過健康檢查：{e}）")
+
 
 if __name__ == "__main__":
     main()

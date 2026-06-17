@@ -289,6 +289,13 @@ def main():
     print(f"   失效：{payload['unavailable']} 支（標記後跳過）")
     print(f"   輸出：{OUTPUT_PATH}")
 
+    # 抓完自動做網站健康檢查（videos.js 有效 + CDN 版本已鎖定）
+    try:
+        from verify_site import verify
+        verify()
+    except Exception as e:
+        print(f"   （略過健康檢查：{e}）")
+
 
 if __name__ == "__main__":
     main()
