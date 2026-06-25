@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 影片學習中樞｜摘要、分類、進度一次整理</title>
+  <meta name="description" content="AI 影片學習中樞把 YouTube 收藏影片整理成摘要、分類、搜尋與觀看進度，快速找到下一支值得看的影片。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --background: #0A0A0C;
+      --surface: #18181B;
+      --surface-strong: #202024;
+      --text-primary: #FFFFFF;
+      --text-secondary: #A1A1AA;
+      --text-muted: #71717A;
+      --border: #27272A;
+      --border-strong: #3F3F46;
+      --inverse: #0A0A0C;
+      --line: rgba(255, 255, 255, 0.12);
+      --line-soft: rgba(255, 255, 255, 0.06);
+      --status: #D4D4D8;
+      --radius: 8px;
+      --container: 1160px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background: var(--background);
+      color: var(--text-primary);
+      font-family: "Inter", "Noto Sans TC", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -3;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 28%),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        #0A0A0C;
+      background-size: auto, 72px 72px, 72px 72px, auto;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .page-shell {
+      min-height: 100vh;
+      position: relative;
+      isolation: isolate;
+    }
+
+    .synapse-scene {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    #synapseCanvas {
+      width: 100%;
+      height: 100%;
+      opacity: 0.74;
+    }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      opacity: 0.16;
+      background-image:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+      background-size: 4px 4px;
+      mask-image: linear-gradient(180deg, black, transparent 82%);
+    }
+
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10, 10, 12, 0.82);
+      backdrop-filter: blur(18px);
+    }
+
+    .topbar-inner {
+      width: min(100% - 32px, var(--container));
+      height: 72px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      min-width: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      display: grid;
+      place-items: center;
+      background: #111114;
+    }
+
+    .brand-mark::before,
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      width: 13px;
+      height: 1px;
+      background: var(--text-primary);
+      transform-origin: right center;
+    }
+
+    .brand-mark::before {
+      transform: rotate(35deg);
+    }
+
+    .brand-mark::after {
+      transform: rotate(-35deg);
+    }
+
+    .brand-copy {
+      display: grid;
+      gap: 2px;
+    }
+
+    .brand-name {
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .brand-sub,
+    .mono,
+    .kicker,
+    .metric-label,
+    .signal-label,
+    .panel-label {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .brand-sub {
+      color: var(--text-secondary);
+      font-size: 10px;
+      line-height: 1.2;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 26px;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .nav a {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      transition: color 180ms ease;
+    }
+
+    .nav a:hover,
+    .nav a:focus-visible {
+      color: var(--text-primary);
+      outline: none;
+    }
+
+    .topbar-cta,
+    .button-primary,
+    .button-secondary {
+      min-height: 44px;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, color 180ms ease;
+    }
+
+    .topbar-cta {
+      padding: 0 17px;
+      background: var(--text-primary);
+      color: var(--inverse);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .button-primary {
+      padding: 0 22px;
+      background: var(--text-primary);
+      color: var(--inverse);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .button-secondary {
+      padding: 0 20px;
+      border-color: var(--border-strong);
+      background: rgba(24, 24, 27, 0.72);
+      color: var(--text-primary);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .topbar-cta:hover,
+    .button-primary:hover,
+    .button-secondary:hover {
+      transform: translateY(-1px);
+    }
+
+    .button-primary:hover,
+    .topbar-cta:hover {
+      background: #E4E4E7;
+    }
+
+    .button-secondary:hover {
+      border-color: var(--text-primary);
+    }
+
+    .topbar-cta:focus-visible,
+    .button-primary:focus-visible,
+    .button-secondary:focus-visible {
+      outline: 2px solid var(--text-primary);
+      outline-offset: 3px;
+    }
+
+    .hero {
+      position: relative;
+      width: min(100% - 32px, var(--container));
+      min-height: 100dvh;
+      margin: 0 auto;
+      padding: 132px 0 42px;
+      display: grid;
+      align-content: center;
+      gap: 52px;
+    }
+
+    .hero-content {
+      max-width: 760px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .kicker {
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .hero h1 {
+      max-width: 760px;
+      margin: 18px 0 0;
+      font-size: 68px;
+      font-weight: 500;
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+
+    .hero h1 span {
+      color: var(--text-secondary);
+      display: block;
+    }
+
+    .hero-copy {
+      max-width: 560px;
+      margin: 24px 0 0;
+      color: var(--text-secondary);
+      font-size: 18px;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      margin-top: 32px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .hero-terminal {
+      position: absolute;
+      right: 0;
+      bottom: 186px;
+      z-index: 1;
+      width: min(390px, 34vw);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(24, 24, 27, 0.82);
+      box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(16px);
+      overflow: hidden;
+    }
+
+    .terminal-head {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .terminal-title {
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-primary);
+      box-shadow: 0 0 18px rgba(255, 255, 255, 0.45);
+    }
+
+    .terminal-body {
+      display: grid;
+      gap: 0;
+      padding: 6px 0;
+    }
+
+    .signal-row {
+      min-height: 58px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line-soft);
+      display: grid;
+      grid-template-columns: 92px 1fr auto;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .signal-row:last-child {
+      border-bottom: 0;
+    }
+
+    .signal-label {
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .signal-main {
+      min-width: 0;
+      color: var(--text-secondary);
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .signal-score {
+      color: var(--text-primary);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .metrics-rail {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: rgba(10, 10, 12, 0.64);
+      backdrop-filter: blur(14px);
+    }
+
+    .metric {
+      min-height: 112px;
+      padding: 22px 24px;
+      border-right: 1px solid var(--border);
+      display: grid;
+      align-content: center;
+      gap: 9px;
+    }
+
+    .metric:last-child {
+      border-right: 0;
+    }
+
+    .metric strong {
+      font-size: 34px;
+      line-height: 1;
+      font-weight: 700;
+    }
+
+    .metric-label {
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .section {
+      width: min(100% - 32px, var(--container));
+      margin: 0 auto;
+      padding: 88px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(280px, 0.48fr);
+      gap: 48px;
+      align-items: end;
+      margin-bottom: 32px;
+    }
+
+    .section h2 {
+      margin: 12px 0 0;
+      max-width: 660px;
+      font-size: 42px;
+      font-weight: 500;
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    .section-head p,
+    .final-copy p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .console-shell {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(24, 24, 27, 0.82);
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.32);
+    }
+
+    .console-top {
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-label {
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .console-grid {
+      display: grid;
+      grid-template-columns: 0.9fr 1.25fr 0.82fr;
+      min-height: 420px;
+    }
+
+    .console-column {
+      border-right: 1px solid var(--border);
+      display: grid;
+      align-content: start;
+    }
+
+    .console-column:last-child {
+      border-right: 0;
+    }
+
+    .column-head {
+      min-height: 58px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+
+    .learning-row,
+    .queue-row {
+      min-height: 82px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line-soft);
+      display: grid;
+      gap: 8px;
+    }
+
+    .learning-row:last-child,
+    .queue-row:last-child {
+      border-bottom: 0;
+    }
+
+    .row-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+
+    .row-title span:last-child {
+      color: var(--text-muted);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .row-copy,
+    .queue-row p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .map-area {
+      min-height: 362px;
+      padding: 24px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 22px;
+      background:
+        linear-gradient(90deg, var(--line-soft) 1px, transparent 1px),
+        linear-gradient(var(--line-soft) 1px, transparent 1px);
+      background-size: 44px 44px;
+    }
+
+    .map-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .map-graph {
+      position: relative;
+      min-height: 220px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: rgba(10, 10, 12, 0.58);
+    }
+
+    .graph-line {
+      position: absolute;
+      height: 1px;
+      left: 22px;
+      right: 22px;
+      background: var(--line);
+    }
+
+    .graph-line:nth-child(1) {
+      top: 24%;
+    }
+
+    .graph-line:nth-child(2) {
+      top: 48%;
+    }
+
+    .graph-line:nth-child(3) {
+      top: 72%;
+    }
+
+    .graph-path {
+      position: absolute;
+      left: 34px;
+      right: 34px;
+      bottom: 28px;
+      height: 150px;
+      clip-path: polygon(0 72%, 16% 58%, 30% 64%, 46% 30%, 62% 42%, 78% 18%, 100% 28%, 100% 100%, 0 100%);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.04));
+      border-bottom: 1px solid var(--border);
+    }
+
+    .node {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text-primary);
+      box-shadow: 0 0 18px rgba(255, 255, 255, 0.32);
+    }
+
+    .node:nth-of-type(1) {
+      left: 14%;
+      top: 56%;
+    }
+
+    .node:nth-of-type(2) {
+      left: 45%;
+      top: 28%;
+    }
+
+    .node:nth-of-type(3) {
+      left: 76%;
+      top: 18%;
+    }
+
+    .map-footer {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .map-stat {
+      min-height: 72px;
+      padding: 14px 16px;
+      border-right: 1px solid var(--border);
+      display: grid;
+      gap: 6px;
+    }
+
+    .map-stat:last-child {
+      border-right: 0;
+    }
+
+    .map-stat strong {
+      font-size: 20px;
+    }
+
+    .map-stat span {
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    .queue-row {
+      min-height: 98px;
+    }
+
+    .queue-tag {
+      width: fit-content;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      padding: 5px 8px;
+      color: var(--text-primary);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(24, 24, 27, 0.78);
+      overflow: hidden;
+    }
+
+    .step {
+      min-height: 210px;
+      padding: 24px;
+      border-right: 1px solid var(--border);
+      display: grid;
+      align-content: space-between;
+      gap: 24px;
+      transition: background 180ms ease;
+    }
+
+    .step:last-child {
+      border-right: 0;
+    }
+
+    .step:hover {
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .step-number {
+      color: var(--text-muted);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .step h3 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      line-height: 1.25;
+    }
+
+    .step p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .proof-grid {
+      display: grid;
+      grid-template-columns: 0.92fr 1.08fr;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(24, 24, 27, 0.72);
+      overflow: hidden;
+    }
+
+    .proof-copy {
+      padding: 32px;
+      border-right: 1px solid var(--border);
+    }
+
+    .proof-copy h2 {
+      margin-top: 12px;
+    }
+
+    .proof-copy p {
+      margin: 18px 0 0;
+      color: var(--text-secondary);
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .proof-table {
+      display: grid;
+    }
+
+    .proof-row {
+      min-height: 82px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 16px;
+      padding: 0 28px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .proof-row:last-child {
+      border-bottom: 0;
+    }
+
+    .proof-row span {
+      color: var(--text-secondary);
+    }
+
+    .proof-row strong {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .final-panel {
+      min-height: 250px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 28px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 34px;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        rgba(24, 24, 27, 0.8);
+      background-size: 54px 54px;
+    }
+
+    .final-copy h2 {
+      margin: 12px 0 0;
+      font-size: 42px;
+      font-weight: 500;
+      line-height: 1.12;
+    }
+
+    .site-footer {
+      width: min(100% - 32px, var(--container));
+      min-height: 92px;
+      margin: 0 auto;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.001ms !important;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .nav {
+        display: none;
+      }
+
+      .hero {
+        padding-top: 118px;
+      }
+
+      .hero h1 {
+        font-size: 54px;
+      }
+
+      .hero-terminal {
+        position: relative;
+        right: auto;
+        bottom: auto;
+        width: 100%;
+        max-width: 680px;
+      }
+
+      .metrics-rail,
+      .console-grid,
+      .pipeline,
+      .proof-grid,
+      .section-head,
+      .final-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .metric,
+      .console-column,
+      .step,
+      .proof-copy {
+        border-right: 0;
+      }
+
+      .metric,
+      .step,
+      .proof-copy {
+        border-bottom: 1px solid var(--border);
+      }
+
+      .metric:last-child,
+      .step:last-child {
+        border-bottom: 0;
+      }
+
+      .section-head {
+        gap: 18px;
+        align-items: start;
+      }
+
+      .final-panel {
+        justify-items: start;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .topbar-inner,
+      .hero,
+      .section,
+      .site-footer {
+        width: min(100% - 24px, var(--container));
+      }
+
+      .topbar-inner {
+        height: 66px;
+      }
+
+      .brand-sub,
+      .topbar-cta {
+        display: none;
+      }
+
+      .hero {
+        min-height: auto;
+        padding: 106px 0 36px;
+        gap: 28px;
+      }
+
+      .hero h1 {
+        font-size: 42px;
+        line-height: 1.08;
+      }
+
+      .hero-copy {
+        font-size: 16px;
+        line-height: 1.65;
+      }
+
+      .hero-actions {
+        display: grid;
+      }
+
+      .hero-terminal {
+        display: none;
+      }
+
+      .metric {
+        min-height: 92px;
+        padding: 18px 20px;
+      }
+
+      .metric strong {
+        font-size: 30px;
+      }
+
+      .section {
+        padding: 64px 0;
+      }
+
+      .section h2,
+      .final-copy h2 {
+        font-size: 32px;
+        line-height: 1.18;
+      }
+
+      .console-top,
+      .column-head,
+      .learning-row,
+      .queue-row,
+      .map-area,
+      .proof-copy,
+      .final-panel {
+        padding-left: 18px;
+        padding-right: 18px;
+      }
+
+      .console-top {
+        display: grid;
+        align-content: center;
+        justify-content: start;
+        min-height: 78px;
+      }
+
+      .map-area {
+        padding-top: 20px;
+        padding-bottom: 20px;
+      }
+
+      .map-footer {
+        grid-template-columns: 1fr;
+      }
+
+      .map-stat {
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .map-stat:last-child {
+        border-bottom: 0;
+      }
+
+      .proof-row {
+        padding: 0 18px;
+      }
+
+      .site-footer {
+        min-height: 110px;
+        align-items: flex-start;
+        justify-content: center;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <div class="synapse-scene" aria-hidden="true">
+      <canvas id="synapseCanvas"></canvas>
+    </div>
+    <div class="noise" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="#top" aria-label="回到 AI 影片學習中樞首頁">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span class="brand-copy">
+            <span class="brand-name">AI 影片學習</span>
+            <span class="brand-sub">Summaries / Index / Progress</span>
+          </span>
+        </a>
+
+        <nav class="nav" aria-label="主要導覽">
+          <a href="#intelligence">中樞</a>
+          <a href="#pipeline">流程</a>
+          <a href="#proof">指標</a>
+          <a href="#start">開始</a>
+        </nav>
+
+        <a class="topbar-cta" href="index.html">打開平台</a>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-content">
+          <div class="kicker">AI Video Learning Intelligence</div>
+          <h1 id="hero-title">把收藏影片<span>變成學習路線</span></h1>
+          <p class="hero-copy">
+            AI 摘要、分類與進度，直接找到下一支影片。
+          </p>
+          <div class="hero-actions">
+            <a class="button-primary" href="index.html">進入收藏平台</a>
+            <a class="button-secondary" href="#intelligence">查看整理方式</a>
+          </div>
+        </div>
+
+        <aside class="hero-terminal" aria-label="AI 影片整理狀態">
+          <div class="terminal-head">
+            <span class="terminal-title">Learning Index</span>
+            <span class="status-dot" aria-hidden="true"></span>
+          </div>
+          <div class="terminal-body">
+            <div class="signal-row">
+              <span class="signal-label">Input</span>
+              <span class="signal-main">YouTube 收藏影片</span>
+              <span class="signal-score">84</span>
+            </div>
+            <div class="signal-row">
+              <span class="signal-label">Model</span>
+              <span class="signal-main">摘要、重點、技術標籤</span>
+              <span class="signal-score">AI</span>
+            </div>
+            <div class="signal-row">
+              <span class="signal-label">Output</span>
+              <span class="signal-main">可搜尋學習索引</span>
+              <span class="signal-score">Ready</span>
+            </div>
+          </div>
+        </aside>
+
+        <div class="metrics-rail" aria-label="目前收藏平台指標">
+          <div class="metric">
+            <strong>84</strong>
+            <span class="metric-label">已整理影片</span>
+          </div>
+          <div class="metric">
+            <strong>9</strong>
+            <span class="metric-label">主題資料夾</span>
+          </div>
+          <div class="metric">
+            <strong>84</strong>
+            <span class="metric-label">AI 摘要</span>
+          </div>
+          <div class="metric">
+            <strong>25h</strong>
+            <span class="metric-label">可篩選素材</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="intelligence" class="section" aria-labelledby="intelligence-title">
+        <div class="section-head">
+          <div>
+            <div class="kicker">Learning Intelligence</div>
+            <h2 id="intelligence-title">影片進來，知識留下。</h2>
+          </div>
+          <p>
+            不只存連結，而是整理成可搜尋、可回看、可接續的學習索引。
+          </p>
+        </div>
+
+        <div class="console-shell" aria-label="AI 影片學習儀表板示意">
+          <div class="console-top">
+            <span class="panel-label">Synapse Learning Console</span>
+            <span class="panel-label">Live Collection / 84 Videos</span>
+          </div>
+          <div class="console-grid">
+            <div class="console-column">
+              <div class="column-head">學習訊號</div>
+              <div class="learning-row">
+                <div class="row-title"><span>摘要先讀</span><span>01</span></div>
+                <p class="row-copy">先判斷值不值得看完整影片。</p>
+              </div>
+              <div class="learning-row">
+                <div class="row-title"><span>主題歸類</span><span>02</span></div>
+                <p class="row-copy">工具、案例、概念、實作分開。</p>
+              </div>
+              <div class="learning-row">
+                <div class="row-title"><span>下一步排序</span><span>03</span></div>
+                <p class="row-copy">把最該看的影片排到前面。</p>
+              </div>
+            </div>
+
+            <div class="console-column">
+              <div class="column-head">學習地圖</div>
+              <div class="map-area">
+                <div class="map-title">
+                  <span>Topic momentum</span>
+                  <span>Updated today</span>
+                </div>
+                <div class="map-graph" aria-hidden="true">
+                  <span class="graph-line"></span>
+                  <span class="graph-line"></span>
+                  <span class="graph-line"></span>
+                  <span class="graph-path"></span>
+                  <span class="node"></span>
+                  <span class="node"></span>
+                  <span class="node"></span>
+                </div>
+                <div class="map-footer">
+                  <div class="map-stat">
+                    <strong>AI 工具</strong>
+                    <span>可立即實作</span>
+                  </div>
+                  <div class="map-stat">
+                    <strong>自動化</strong>
+                    <span>高優先學習</span>
+                  </div>
+                  <div class="map-stat">
+                    <strong>Prompt</strong>
+                    <span>重點回看</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="console-column">
+              <div class="column-head">下一支影片</div>
+              <div class="queue-row">
+                <span class="queue-tag">Watch Next</span>
+                <p>挑出最符合當前主題的影片。</p>
+              </div>
+              <div class="queue-row">
+                <span class="queue-tag">Resume</span>
+                <p>接回上次看到的學習進度。</p>
+              </div>
+              <div class="queue-row">
+                <span class="queue-tag">Search</span>
+                <p>用關鍵字找摘要與筆記。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="pipeline" class="section" aria-labelledby="pipeline-title">
+        <div class="section-head">
+          <div>
+            <div class="kicker">Index Pipeline</div>
+            <h2 id="pipeline-title">四步驟整理收藏。</h2>
+          </div>
+          <p>
+            從影片收藏到學習清單，每一步都減少判斷成本。
+          </p>
+        </div>
+
+        <div class="pipeline">
+          <article class="step">
+            <span class="step-number">01</span>
+            <div>
+              <h3>匯入影片</h3>
+              <p>同步播放清單與影片資訊。</p>
+            </div>
+          </article>
+          <article class="step">
+            <span class="step-number">02</span>
+            <div>
+              <h3>AI 摘要</h3>
+              <p>整理重點、章節與關鍵字。</p>
+            </div>
+          </article>
+          <article class="step">
+            <span class="step-number">03</span>
+            <div>
+              <h3>分類篩選</h3>
+              <p>依主題、難度與實用度排序。</p>
+            </div>
+          </article>
+          <article class="step">
+            <span class="step-number">04</span>
+            <div>
+              <h3>接續學習</h3>
+              <p>留下筆記與觀看進度。</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="proof" class="section" aria-labelledby="proof-title">
+        <div class="proof-grid">
+          <div class="proof-copy">
+            <div class="kicker">Current Library</div>
+            <h2 id="proof-title">不是影片清單，是 AI 學習索引。</h2>
+            <p>
+              每支影片都能被搜尋、比較、回看，不再只是收藏夾裡的一個連結。
+            </p>
+          </div>
+          <div class="proof-table" aria-label="平台目前資料">
+            <div class="proof-row"><span>收藏影片</span><strong>84</strong></div>
+            <div class="proof-row"><span>完成摘要</span><strong>84</strong></div>
+            <div class="proof-row"><span>學習主題</span><strong>9</strong></div>
+            <div class="proof-row"><span>索引時長</span><strong>25h+</strong></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="start" class="section" aria-labelledby="start-title">
+        <div class="final-panel">
+          <div class="final-copy">
+            <div class="kicker">Open Platform</div>
+            <h2 id="start-title">打開平台，選下一支影片。</h2>
+            <p>用摘要和篩選，把學習時間花在真正有用的內容上。</p>
+          </div>
+          <a class="button-primary" href="index.html">進入 AI 影片學習平台</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>AI 影片學習中樞</span>
+      <span>Summaries / Index / Progress</span>
+    </footer>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("synapseCanvas");
+    const ctx = canvas.getContext("2d");
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let width = 0;
+    let height = 0;
+    let frame = 0;
+
+    function resizeCanvas() {
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = Math.floor(width * ratio);
+      canvas.height = Math.floor(height * ratio);
+      canvas.style.width = width + "px";
+      canvas.style.height = height + "px";
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    }
+
+    function drawNetwork() {
+      ctx.clearRect(0, 0, width, height);
+      const centerX = width * 0.62;
+      const centerY = height * 0.44;
+      const radius = Math.min(width, height) * 0.34;
+      const nodes = [];
+
+      for (let i = 0; i < 22; i += 1) {
+        const angle = (Math.PI * 2 * i) / 22 + frame * 0.002;
+        const band = i % 3 === 0 ? 0.42 : i % 3 === 1 ? 0.68 : 0.92;
+        nodes.push({
+          x: centerX + Math.cos(angle) * radius * band,
+          y: centerY + Math.sin(angle) * radius * band * 0.58
+        });
+      }
+
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.09)";
+      for (let i = 0; i < nodes.length; i += 1) {
+        for (let j = i + 1; j < nodes.length; j += 1) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const distance = Math.hypot(dx, dy);
+          if (distance < radius * 0.42) {
+            ctx.globalAlpha = Math.max(0.08, 1 - distance / (radius * 0.42)) * 0.32;
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      ctx.globalAlpha = 1;
+      nodes.forEach((node, index) => {
+        const pulse = 2 + Math.sin(frame * 0.03 + index) * 1.2;
+        ctx.fillStyle = "rgba(255, 255, 255, 0.78)";
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, Math.max(1.6, pulse), 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+      for (let i = 0; i < 5; i += 1) {
+        const y = height * 0.68 + i * 42;
+        ctx.beginPath();
+        ctx.moveTo(width * 0.04, y);
+        ctx.lineTo(width * 0.96, y + Math.sin(frame * 0.01 + i) * 12);
+        ctx.stroke();
+      }
+
+      frame += reducedMotion ? 0 : 1;
+      if (!reducedMotion) requestAnimationFrame(drawNetwork);
+    }
+
+    resizeCanvas();
+    drawNetwork();
+
+    window.addEventListener("resize", () => {
+      resizeCanvas();
+      drawNetwork();
+    });
+  </script>
+</body>
+</html>

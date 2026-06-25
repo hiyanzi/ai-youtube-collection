@@ -37,26 +37,26 @@
   <style>
     body {
       font-family: "Inter", "Noto Sans TC", system-ui, -apple-system, sans-serif;
-      background: #FFFFFF;
+      background: #0A0A0C;
       min-height: 100vh;
-      color: #37352F;
+      color: #FFFFFF;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
     .scroll-hide::-webkit-scrollbar { width: 4px; height: 4px; }
     .scroll-hide::-webkit-scrollbar-track { background: transparent; }
-    .scroll-hide::-webkit-scrollbar-thumb { background: #E9E9E7; border-radius: 2px; }
-    .scroll-hide::-webkit-scrollbar-thumb:hover { background: #D4D4D8; }
+    .scroll-hide::-webkit-scrollbar-thumb { background: #27272A; border-radius: 2px; }
+    .scroll-hide::-webkit-scrollbar-thumb:hover { background: #3F3F46; }
 
-    /* Light SaaS Card */
+    /* Synapse Dark Card */
     .os-card {
-      background: #FFFFFF;
-      border: 1px solid #E9E9E7;
+      background: #18181B;
+      border: 1px solid #27272A;
       transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
     }
     .os-card:hover {
-      border-color: #D4D4D8;
-      box-shadow: 0 4px 12px rgba(55, 53, 47, 0.04);
+      border-color: #3F3F46;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
     }
 
     .watched-card { opacity: 0.5; filter: grayscale(1); }
@@ -78,7 +78,7 @@
     .orb { display: none; }
   </style>
 </head>
-<body class="text-[#37352F] bg-[#FFFFFF] selection:bg-[#E9E9E7] selection:text-[#111111] min-h-screen flex flex-col">
+<body class="text-[#FFFFFF] bg-[#0A0A0C] selection:bg-[#FFFFFF] selection:text-[#0A0A0C] min-h-screen flex flex-col">
   <div id="root" class="relative z-10"></div>
 
   <script type="text/babel" data-presets="react">
@@ -87,11 +87,11 @@
     // ====== 資料：載自 data/videos.js（由 fetch_playlists.py + summarize.py 產生）======
     if (!window.VIDEOS_DATA) {
       document.getElementById("root").innerHTML =
-        '<div style="padding:60px;text-align:center;font-family:sans-serif;color:#475569">' +
+        '<div style="padding:60px;text-align:center;font-family:sans-serif;color:#A1A1AA">' +
         '<div style="font-size:48px;margin-bottom:16px">⚠️</div>' +
         '<h2 style="font-size:20px;margin-bottom:8px">尚未產生影片資料</h2>' +
         '<p style="margin-bottom:16px">請先執行：</p>' +
-        '<code style="background:#0f172a;color:#f1f5f9;padding:8px 16px;border-radius:8px">python scripts/fetch_playlists.py</code>' +
+        '<code style="background:#FFFFFF;color:#0A0A0C;padding:8px 16px;border-radius:8px">python scripts/fetch_playlists.py</code>' +
         '</div>';
       throw new Error("Run fetch_playlists.py first");
     }
@@ -105,12 +105,12 @@
     };
 
     const CONTENT_TYPE_META = {
-      production_case: { label: "公司案例", emoji: "🏢", color: "text-[#059669] bg-[#ECFDF5] border-[#D1FAE5]" },
-      tutorial:        { label: "實戰教學", emoji: "📚", color: "text-[#2563EB] bg-[#EFF6FF] border-[#DBEAFE]" },
-      demo:            { label: "工具展示", emoji: "🎬", color: "text-[#4F46E5] bg-[#EEF2FF] border-[#E0E7FF]" },
-      theory:          { label: "理論講解", emoji: "🧠", color: "text-[#D97706] bg-[#FFFBEB] border-[#FEF3C7]" },
-      news:            { label: "新聞", emoji: "📰", color: "text-[#4B5563] bg-[#F3F4F6] border-[#E5E7EB]" },
-      discussion:      { label: "討論雜談", emoji: "💬", color: "text-[#E11D48] bg-[#FFF1F2] border-[#FFE4E6]" },
+      production_case: { label: "公司案例", emoji: "🏢", color: "text-[#D4D4D8] bg-[#202024] border-[#3F3F46]" },
+      tutorial:        { label: "實戰教學", emoji: "📚", color: "text-[#FFFFFF] bg-[#202024] border-[#3F3F46]" },
+      demo:            { label: "工具展示", emoji: "🎬", color: "text-[#D4D4D8] bg-[#202024] border-[#3F3F46]" },
+      theory:          { label: "理論講解", emoji: "🧠", color: "text-[#D4D4D8] bg-[#202024] border-[#3F3F46]" },
+      news:            { label: "新聞", emoji: "📰", color: "text-[#A1A1AA] bg-[#18181B] border-[#27272A]" },
+      discussion:      { label: "討論雜談", emoji: "💬", color: "text-[#D4D4D8] bg-[#202024] border-[#3F3F46]" },
     };
 
     const SIGNAL_META = {
@@ -122,10 +122,10 @@
     };
 
     const scoreColor = (score) => {
-      if (score == null) return "text-[#787774] bg-[#F7F7F5] border-[#E9E9E7]";
-      if (score >= 8) return "text-[#059669] bg-[#ECFDF5] border-[#D1FAE5]";
-      if (score >= 5) return "text-[#2563EB] bg-[#EFF6FF] border-[#DBEAFE]";
-      return "text-[#787774] bg-[#F7F7F5] border-[#E9E9E7]";
+      if (score == null) return "text-[#A1A1AA] bg-[#18181B] border-[#27272A]";
+      if (score >= 8) return "text-[#D4D4D8] bg-[#202024] border-[#3F3F46]";
+      if (score >= 5) return "text-[#FFFFFF] bg-[#202024] border-[#3F3F46]";
+      return "text-[#A1A1AA] bg-[#18181B] border-[#27272A]";
     };
 
     // ====== Components ======
@@ -135,15 +135,15 @@
           onClick={onClick}
           className={`w-full text-left px-3 py-1.5 rounded-md flex items-center justify-between transition-colors ${
             active
-              ? "bg-[#EAEAEA] text-[#111111] font-medium"
-              : "hover:bg-[#F5F5F5] text-[#787774]"
+              ? "bg-[#202024] text-[#FFFFFF] font-medium"
+              : "hover:bg-[#18181B] text-[#A1A1AA]"
           }`}
         >
           <span className="flex items-center gap-2 min-w-0">
             <span className="shrink-0 opacity-70 text-xs">{icon}</span>
             <span className="text-sm truncate">{label}</span>
           </span>
-          <span className={`text-xs shrink-0 ml-2 ${active ? "text-[#111111]" : "text-[#999999]"}`}>{count}</span>
+          <span className={`text-xs shrink-0 ml-2 ${active ? "text-[#FFFFFF]" : "text-[#71717A]"}`}>{count}</span>
         </button>
       );
     }
@@ -176,10 +176,10 @@
       const hasSummary = !!video.summary;
 
       return (
-        <div className={`os-card h-full rounded-xl overflow-hidden flex flex-col ${cardCls}`}>
+        <div className={`os-card h-full rounded-lg overflow-hidden flex flex-col ${cardCls}`}>
           {/* 極簡縮圖 */}
           <div
-            className={`relative w-full aspect-video bg-[#F9F9F8] border-b border-[#E9E9E7] ${!isUnavailable ? "cursor-pointer group" : ""}`}
+            className={`relative w-full aspect-video bg-[#18181B] border-b border-[#27272A] ${!isUnavailable ? "cursor-pointer group" : ""}`}
             onClick={() => !isUnavailable && window.open(video.url, "_blank")}
           >
             {!isUnavailable ? (
@@ -196,35 +196,35 @@
             {/* 左上角狀態指示 */}
             <button
               onClick={(e) => { e.stopPropagation(); onToggleWatched(video.id); }}
-              className="absolute top-2 left-2 z-10 w-5 h-5 flex items-center justify-center rounded bg-[#FFFFFF]/90 border border-[#E9E9E7] hover:border-[#CCCCCC] transition-colors backdrop-blur-sm shadow-sm"
+              className="absolute top-2 left-2 z-10 w-5 h-5 flex items-center justify-center rounded bg-[#18181B]/95 border border-[#27272A] hover:border-[#3F3F46] transition-colors backdrop-blur-sm shadow-sm"
               title={isWatched ? "標記為未看" : "標記看過"}
             >
               {isWatched ? (
-                <div className="w-2.5 h-2.5 rounded-sm bg-[#2563EB] shadow-[0_0_6px_rgba(37,99,235,0.4)]" />
+                <div className="w-2.5 h-2.5 rounded-sm bg-[#FFFFFF] shadow-[0_0_8px_rgba(255,255,255,0.34)]" />
               ) : (
-                <div className="w-2 h-2 rounded-sm border border-[#CCCCCC]" />
+                <div className="w-2 h-2 rounded-sm border border-[#3F3F46]" />
               )}
             </button>
 
             {video.duration && (
-              <span className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-[#FFFFFF]/90 text-[#555555] text-[10px] rounded border border-[#E9E9E7] tracking-wide font-mono backdrop-blur-sm shadow-sm">
+              <span className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-[#18181B]/95 text-[#A1A1AA] text-[10px] rounded border border-[#27272A] tracking-wide font-mono backdrop-blur-sm shadow-sm">
                 {video.duration}
               </span>
             )}
             
             {hasNote && (
-              <span className="absolute top-2 right-2 text-[10px] bg-[#FFFFFF]/90 text-[#555555] px-1.5 py-0.5 rounded border border-[#E9E9E7] backdrop-blur-sm shadow-sm">
+              <span className="absolute top-2 right-2 text-[10px] bg-[#18181B]/95 text-[#A1A1AA] px-1.5 py-0.5 rounded border border-[#27272A] backdrop-blur-sm shadow-sm">
                 📝
               </span>
             )}
           </div>
 
           {/* 內容區 */}
-          <div className="p-4 space-y-3 flex-1 flex flex-col bg-[#FFFFFF]">
+          <div className="p-4 space-y-3 flex-1 flex flex-col bg-[#18181B]">
             {/* 標題與重點摘要 */}
             <div>
               <h3 
-                className="text-sm font-medium leading-snug line-clamp-2 text-[#111111] cursor-pointer hover:text-[#2563EB] transition-colors"
+                className="text-sm font-medium leading-snug line-clamp-2 text-[#FFFFFF] cursor-pointer hover:text-[#FFFFFF] transition-colors"
                 onClick={() => onOpenDetails(video.id)}
               >
                 {video.title}
@@ -245,7 +245,7 @@
                   </span>
                 )}
                 {video.has_code && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F5F5F5] text-[#787774] border border-[#E9E9E7]">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#18181B] text-[#A1A1AA] border border-[#27272A]">
                     {`<Code />`}
                   </span>
                 )}
@@ -254,20 +254,20 @@
               {video.tags && video.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {video.tags.slice(0, 3).map(t => (
-                    <span key={t} className="px-1.5 py-0.5 bg-[#F5F5F5] text-[#666666] text-[10px] rounded border border-[#E9E9E7]">
+                    <span key={t} className="px-1.5 py-0.5 bg-[#18181B] text-[#A1A1AA] text-[10px] rounded border border-[#27272A]">
                       {t}
                     </span>
                   ))}
                   {video.tags.length > 3 && (
-                    <span className="px-1.5 py-0.5 text-[10px] text-[#999999]">+{video.tags.length - 3}</span>
+                    <span className="px-1.5 py-0.5 text-[10px] text-[#71717A]">+{video.tags.length - 3}</span>
                   )}
                 </div>
               )}
             </div>
 
             {/* 底部 Metadata 與動作 */}
-            <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#F5F5F5] mt-auto">
-              <div className="text-[10px] text-[#999999] flex items-center gap-1.5 truncate">
+            <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#18181B] mt-auto">
+              <div className="text-[10px] text-[#71717A] flex items-center gap-1.5 truncate">
                 <span className="truncate max-w-[80px]">{video.channel || "—"}</span>
                 <span>·</span>
                 <span className="shrink-0">{video.publishedAt || "—"}</span>
@@ -276,14 +276,14 @@
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => onOpenNotes(video.id)}
-                  className="text-[11px] px-2 py-1 rounded bg-[#F9F9F8] text-[#787774] hover:text-[#111111] hover:bg-[#EAEAEA] border border-[#E9E9E7] transition-colors shadow-sm"
+                  className="text-[11px] px-2 py-1 rounded bg-[#18181B] text-[#A1A1AA] hover:text-[#FFFFFF] hover:bg-[#202024] border border-[#27272A] transition-colors shadow-sm"
                   title="筆記"
                 >
                   Notes
                 </button>
                 <button
                   onClick={() => onOpenDetails(video.id)}
-                  className="text-[11px] px-2 py-1 rounded bg-[#F9F9F8] text-[#787774] hover:text-[#111111] hover:bg-[#EAEAEA] border border-[#E9E9E7] transition-colors shadow-sm"
+                  className="text-[11px] px-2 py-1 rounded bg-[#18181B] text-[#A1A1AA] hover:text-[#FFFFFF] hover:bg-[#202024] border border-[#27272A] transition-colors shadow-sm"
                   title="完整資訊"
                 >
                   View
@@ -300,35 +300,35 @@
       if (!video) return null;
       return (
         <>
-          <div className="fixed inset-0 bg-[#111111]/40 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
-          <div className="fixed inset-y-0 right-0 w-full max-w-lg bg-[#FFFFFF] border-l border-[#E9E9E7] shadow-2xl z-50 flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="p-5 border-b border-[#E9E9E7] flex justify-between items-start">
+          <div className="fixed inset-0 bg-[#0A0A0C]/72 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
+          <div className="fixed inset-y-0 right-0 w-full max-w-lg bg-[#18181B] border-l border-[#27272A] shadow-2xl z-50 flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b border-[#27272A] flex justify-between items-start">
               <div>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-xs px-2 py-0.5 bg-[#F5F5F5] text-[#787774] border border-[#E9E9E7] rounded">Note Editor</span>
+                  <span className="text-xs px-2 py-0.5 bg-[#18181B] text-[#A1A1AA] border border-[#27272A] rounded">Note Editor</span>
                 </div>
-                <h3 className="text-sm text-[#111111] font-medium leading-snug line-clamp-2">{video.title}</h3>
+                <h3 className="text-sm text-[#FFFFFF] font-medium leading-snug line-clamp-2">{video.title}</h3>
               </div>
-              <button onClick={onClose} className="text-[#787774] hover:text-[#111111] p-1">✕</button>
+              <button onClick={onClose} className="text-[#A1A1AA] hover:text-[#FFFFFF] p-1">✕</button>
             </div>
             <div className="p-5 flex-1 overflow-y-auto">
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Write your research notes here..."
-                className="w-full h-full min-h-[300px] bg-transparent text-[#111111] text-sm leading-relaxed focus:outline-none resize-none placeholder:text-[#999999]"
+                className="w-full h-full min-h-[300px] bg-transparent text-[#FFFFFF] text-sm leading-relaxed focus:outline-none resize-none placeholder:text-[#71717A]"
                 autoFocus
               />
             </div>
-            <div className="p-4 border-t border-[#E9E9E7] flex justify-between items-center bg-[#F9F9F8]">
-              <p className="text-[10px] text-[#999999]">Local storage only</p>
+            <div className="p-4 border-t border-[#27272A] flex justify-between items-center bg-[#18181B]">
+              <p className="text-[10px] text-[#71717A]">Local storage only</p>
               <div className="flex gap-2">
-                <button onClick={onClose} className="px-3 py-1.5 text-xs text-[#787774] hover:bg-[#F5F5F5] rounded-md transition-colors border border-transparent hover:border-[#CCCCCC]">
+                <button onClick={onClose} className="px-3 py-1.5 text-xs text-[#A1A1AA] hover:bg-[#18181B] rounded-md transition-colors border border-transparent hover:border-[#3F3F46]">
                   Cancel
                 </button>
                 <button
                   onClick={() => { onSave(video.id, text); onClose(); }}
-                  className="px-4 py-1.5 text-xs bg-[#111111] text-[#FFFFFF] hover:bg-[#333333] rounded-md transition-colors font-medium shadow-sm"
+                  className="px-4 py-1.5 text-xs bg-[#FFFFFF] text-[#0A0A0C] hover:bg-[#D4D4D8] rounded-md transition-colors font-medium shadow-sm"
                 >
                   Save Note
                 </button>
@@ -345,22 +345,22 @@
       const sig = video.production_signals || {};
       return (
         <>
-          <div className="fixed inset-0 bg-[#111111]/40 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
-          <div className="fixed inset-y-0 right-0 w-full max-w-xl bg-[#FFFFFF] border-l border-[#E9E9E7] shadow-2xl z-50 flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b border-[#E9E9E7] flex justify-between items-start">
+          <div className="fixed inset-0 bg-[#0A0A0C]/72 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
+          <div className="fixed inset-y-0 right-0 w-full max-w-xl bg-[#18181B] border-l border-[#27272A] shadow-2xl z-50 flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b border-[#27272A] flex justify-between items-start">
               <div className="pr-8">
-                <h3 className="font-semibold text-lg text-[#111111] leading-tight">{video.title}</h3>
-                <div className="text-xs text-[#787774] mt-3 flex flex-wrap gap-x-4 gap-y-2">
+                <h3 className="font-semibold text-lg text-[#FFFFFF] leading-tight">{video.title}</h3>
+                <div className="text-xs text-[#A1A1AA] mt-3 flex flex-wrap gap-x-4 gap-y-2">
                   <span className="flex items-center gap-1"><span className="opacity-50">CHANNEL</span> {video.channel}</span>
                   <span className="flex items-center gap-1"><span className="opacity-50">DATE</span> {video.publishedAt}</span>
                   <span className="flex items-center gap-1"><span className="opacity-50">DURATION</span> {video.duration}</span>
                   <span className="flex items-center gap-1"><span className="opacity-50">DIR</span> {video.allFolders?.join(" / ")}</span>
                 </div>
               </div>
-              <button onClick={onClose} className="text-[#787774] hover:text-[#111111] p-1 absolute top-6 right-6">✕</button>
+              <button onClick={onClose} className="text-[#A1A1AA] hover:text-[#FFFFFF] p-1 absolute top-6 right-6">✕</button>
             </div>
 
-            <div className="p-6 space-y-8 flex-1 overflow-y-auto scroll-hide bg-[#FFFFFF]">
+            <div className="p-6 space-y-8 flex-1 overflow-y-auto scroll-hide bg-[#18181B]">
               {/* AI 標籤組 */}
               <div className="flex flex-wrap gap-2">
                 {ct && (
@@ -374,15 +374,15 @@
                   </span>
                 )}
                 {video.abstraction_level && (
-                  <span className="text-[10px] px-2 py-1 rounded bg-[#F5F5F5] text-[#787774] border border-[#E9E9E7] uppercase tracking-wider">
+                  <span className="text-[10px] px-2 py-1 rounded bg-[#18181B] text-[#A1A1AA] border border-[#27272A] uppercase tracking-wider">
                     {video.abstraction_level}
                   </span>
                 )}
                 {video.has_code && (
-                  <span className="text-[10px] px-2 py-1 rounded bg-[#F5F5F5] text-[#787774] border border-[#E9E9E7] uppercase tracking-wider">Has Code</span>
+                  <span className="text-[10px] px-2 py-1 rounded bg-[#18181B] text-[#A1A1AA] border border-[#27272A] uppercase tracking-wider">Has Code</span>
                 )}
                 {video.has_real_company_case && (
-                  <span className="text-[10px] px-2 py-1 rounded text-[#059669] bg-[#ECFDF5] border border-[#D1FAE5] uppercase tracking-wider">
+                  <span className="text-[10px] px-2 py-1 rounded text-[#D4D4D8] bg-[#202024] border border-[#3F3F46] uppercase tracking-wider">
                     Case Study{video.company_mentioned ? `: ${video.company_mentioned}` : ""}
                   </span>
                 )}
@@ -391,19 +391,19 @@
               {/* 摘要 */}
               {video.summary && (
                 <div>
-                  <div className="text-[10px] font-bold text-[#999999] mb-2 tracking-widest uppercase">Summary</div>
-                  <p className="text-sm text-[#555555] leading-relaxed">{video.summary}</p>
+                  <div className="text-[10px] font-bold text-[#71717A] mb-2 tracking-widest uppercase">Summary</div>
+                  <p className="text-sm text-[#A1A1AA] leading-relaxed">{video.summary}</p>
                 </div>
               )}
 
               {/* 重點 */}
               {video.key_points?.length > 0 && (
                 <div>
-                  <div className="text-[10px] font-bold text-[#999999] mb-2 tracking-widest uppercase">Key Takeaways</div>
+                  <div className="text-[10px] font-bold text-[#71717A] mb-2 tracking-widest uppercase">Key Takeaways</div>
                   <ul className="space-y-2">
                     {video.key_points.map((kp, i) => (
-                      <li key={i} className="text-sm text-[#555555] flex gap-3">
-                        <span className="text-[#2563EB] shrink-0 mt-0.5">▪</span>
+                      <li key={i} className="text-sm text-[#A1A1AA] flex gap-3">
+                        <span className="text-[#FFFFFF] shrink-0 mt-0.5">▪</span>
                         <span className="leading-relaxed">{kp}</span>
                       </li>
                     ))}
@@ -414,10 +414,10 @@
               {/* tags */}
               {video.tags?.length > 0 && (
                 <div>
-                  <div className="text-[10px] font-bold text-[#999999] mb-2 tracking-widest uppercase">Tech Stack</div>
+                  <div className="text-[10px] font-bold text-[#71717A] mb-2 tracking-widest uppercase">Tech Stack</div>
                   <div className="flex flex-wrap gap-1.5">
                     {video.tags.map(t => (
-                      <span key={t} className="px-2 py-1 bg-[#F5F5F5] text-[#787774] text-[10px] rounded border border-[#E9E9E7]">
+                      <span key={t} className="px-2 py-1 bg-[#18181B] text-[#A1A1AA] text-[10px] rounded border border-[#27272A]">
                         {t}
                       </span>
                     ))}
@@ -428,13 +428,13 @@
               {/* 生產考量 */}
               {video.production_signals && (
                 <div>
-                  <div className="text-[10px] font-bold text-[#999999] mb-2 tracking-widest uppercase">Production Signals</div>
+                  <div className="text-[10px] font-bold text-[#71717A] mb-2 tracking-widest uppercase">Production Signals</div>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.entries(SIGNAL_META).map(([key, meta]) => {
                       const on = sig[key];
                       return (
                         <div key={key} className={`text-xs px-3 py-2 rounded-md border flex items-center gap-2 ${
-                          on ? "text-[#059669] border-[#D1FAE5] bg-[#ECFDF5]" : "text-[#999999] border-transparent bg-[#F9F9F8]"
+                          on ? "text-[#D4D4D8] border-[#3F3F46] bg-[#202024]" : "text-[#71717A] border-transparent bg-[#18181B]"
                         }`}>
                           <span className="font-medium">{meta.label}</span>
                           <span className="ml-auto">{on ? "✓" : ""}</span>
@@ -446,12 +446,12 @@
               )}
             </div>
 
-            <div className="p-4 border-t border-[#E9E9E7] flex justify-between gap-2 bg-[#F9F9F8]">
+            <div className="p-4 border-t border-[#27272A] flex justify-between gap-2 bg-[#18181B]">
               <a href={video.url} target="_blank" rel="noopener noreferrer"
-                 className="px-4 py-2 text-xs bg-[#111111] text-[#FFFFFF] hover:bg-[#333333] rounded-md transition-colors font-medium">
+                 className="px-4 py-2 text-xs bg-[#FFFFFF] text-[#0A0A0C] hover:bg-[#D4D4D8] rounded-md transition-colors font-medium">
                 Open YouTube
               </a>
-              <button onClick={onClose} className="px-4 py-2 text-xs text-[#787774] hover:bg-[#EAEAEA] border border-transparent hover:border-[#CCCCCC] rounded-md transition-colors">
+              <button onClick={onClose} className="px-4 py-2 text-xs text-[#A1A1AA] hover:bg-[#202024] border border-transparent hover:border-[#3F3F46] rounded-md transition-colors">
                 Close
               </button>
             </div>
@@ -463,44 +463,44 @@
     function AboutModal({ stats, onClose }) {
       return (
         <>
-          <div className="fixed inset-0 bg-[#111111]/40 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
-          <div className="fixed inset-y-0 right-0 w-full max-w-md bg-[#FFFFFF] border-l border-[#E9E9E7] shadow-2xl z-50 flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b border-[#E9E9E7]">
-              <h3 className="text-lg font-bold text-[#111111]">Knowledge OS</h3>
-              <p className="text-[11px] text-[#787774] mt-1 tracking-widest uppercase">System Analytics</p>
+          <div className="fixed inset-0 bg-[#0A0A0C]/72 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
+          <div className="fixed inset-y-0 right-0 w-full max-w-md bg-[#18181B] border-l border-[#27272A] shadow-2xl z-50 flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b border-[#27272A]">
+              <h3 className="text-lg font-bold text-[#FFFFFF]">Knowledge OS</h3>
+              <p className="text-[11px] text-[#A1A1AA] mt-1 tracking-widest uppercase">System Analytics</p>
             </div>
 
             <div className="p-6 space-y-8 flex-1 overflow-y-auto scroll-hide">
               <div>
-                <div className="text-[10px] font-bold text-[#999999] mb-3 tracking-widest uppercase">Database Stats</div>
+                <div className="text-[10px] font-bold text-[#71717A] mb-3 tracking-widest uppercase">Database Stats</div>
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-[#F9F9F8] border border-[#E9E9E7] rounded-lg p-3 text-center">
-                    <div className="text-xl font-bold text-[#111111]">{stats.total}</div>
-                    <div className="text-[10px] text-[#787774] mt-1">Videos</div>
+                  <div className="bg-[#18181B] border border-[#27272A] rounded-lg p-3 text-center">
+                    <div className="text-xl font-bold text-[#FFFFFF]">{stats.total}</div>
+                    <div className="text-[10px] text-[#A1A1AA] mt-1">Videos</div>
                   </div>
-                  <div className="bg-[#F9F9F8] border border-[#E9E9E7] rounded-lg p-3 text-center">
-                    <div className="text-xl font-bold text-[#2563EB]">{stats.summarized}</div>
-                    <div className="text-[10px] text-[#787774] mt-1">AI Indexed</div>
+                  <div className="bg-[#18181B] border border-[#27272A] rounded-lg p-3 text-center">
+                    <div className="text-xl font-bold text-[#FFFFFF]">{stats.summarized}</div>
+                    <div className="text-[10px] text-[#A1A1AA] mt-1">AI Indexed</div>
                   </div>
-                  <div className="bg-[#F9F9F8] border border-[#E9E9E7] rounded-lg p-3 text-center">
-                    <div className="text-xl font-bold text-[#059669]">{Math.floor(stats.totalSec / 3600)}</div>
-                    <div className="text-[10px] text-[#787774] mt-1">Hours</div>
+                  <div className="bg-[#18181B] border border-[#27272A] rounded-lg p-3 text-center">
+                    <div className="text-xl font-bold text-[#D4D4D8]">{Math.floor(stats.totalSec / 3600)}</div>
+                    <div className="text-[10px] text-[#A1A1AA] mt-1">Hours</div>
                   </div>
                 </div>
               </div>
 
               <div>
-                <div className="text-[10px] font-bold text-[#999999] mb-2 tracking-widest uppercase">System Purpose</div>
-                <p className="text-sm text-[#555555] leading-relaxed">
+                <div className="text-[10px] font-bold text-[#71717A] mb-2 tracking-widest uppercase">System Purpose</div>
+                <p className="text-sm text-[#A1A1AA] leading-relaxed">
                   A high-performance environment for AI engineers to manage, filter, and extract value from technical video content without context switching.
                 </p>
               </div>
 
               <div>
-                <div className="text-[10px] font-bold text-[#999999] mb-2 tracking-widest uppercase">Architecture</div>
+                <div className="text-[10px] font-bold text-[#71717A] mb-2 tracking-widest uppercase">Architecture</div>
                 <div className="flex flex-wrap gap-1.5">
                   {["Python", "YouTube Data API", "Gemini 2.5 Flash", "React", "Vercel", "Tailwind (Light SaaS)"].map(t => (
-                    <span key={t} className="px-2 py-1 bg-[#F5F5F5] text-[#787774] text-[10px] rounded border border-[#E9E9E7]">
+                    <span key={t} className="px-2 py-1 bg-[#18181B] text-[#A1A1AA] text-[10px] rounded border border-[#27272A]">
                       {t}
                     </span>
                   ))}
@@ -508,15 +508,15 @@
               </div>
 
               <div>
-                <div className="text-[10px] font-bold text-[#999999] mb-2 tracking-widest uppercase">Cost Analysis</div>
-                <p className="text-sm text-[#555555] leading-relaxed">
+                <div className="text-[10px] font-bold text-[#71717A] mb-2 tracking-widest uppercase">Cost Analysis</div>
+                <p className="text-sm text-[#A1A1AA] leading-relaxed">
                   Total index cost for {stats.summarized} videos: ~$1.27. Marginal cost: ~$0.03/video via Gemini Flash.
                 </p>
               </div>
             </div>
 
-            <div className="p-4 border-t border-[#E9E9E7] flex justify-end gap-2 bg-[#F9F9F8]">
-              <button onClick={onClose} className="px-4 py-2 text-xs bg-[#111111] text-[#FFFFFF] hover:bg-[#333333] rounded-md transition-colors font-medium">
+            <div className="p-4 border-t border-[#27272A] flex justify-end gap-2 bg-[#18181B]">
+              <button onClick={onClose} className="px-4 py-2 text-xs bg-[#FFFFFF] text-[#0A0A0C] hover:bg-[#D4D4D8] rounded-md transition-colors font-medium">
                 Dismiss
               </button>
             </div>
@@ -628,14 +628,14 @@
       const progressPct = stats.total > 0 ? Math.round((stats.watched / stats.total) * 100) : 0;
 
       return (
-        <div className="min-h-screen flex bg-[#FFFFFF] text-[#111111]">
-          <aside className="w-56 bg-[#F9F9F8] border-r border-[#E9E9E7] py-6 px-4 flex flex-col gap-1 sticky top-0 h-screen overflow-y-auto scroll-hide">
+        <div className="min-h-screen flex bg-[#0A0A0C] text-[#FFFFFF]">
+          <aside className="w-56 bg-[#18181B] border-r border-[#27272A] py-6 px-4 flex flex-col gap-1 sticky top-0 h-screen overflow-y-auto scroll-hide">
             <div className="mb-6 px-1">
-              <h1 className="text-[13px] uppercase tracking-widest font-bold text-[#111111] mb-1">Knowledge OS</h1>
-              <p className="text-[11px] text-[#787774]">AI Engineer Second Brain</p>
+              <h1 className="text-[13px] uppercase tracking-widest font-bold text-[#FFFFFF] mb-1">Knowledge OS</h1>
+              <p className="text-[11px] text-[#A1A1AA]">AI Engineer Second Brain</p>
             </div>
 
-            <div className="text-[10px] text-[#888888] px-3 mb-1 mt-1 tracking-wider uppercase font-semibold">Folders</div>
+            <div className="text-[10px] text-[#71717A] px-3 mb-1 mt-1 tracking-wider uppercase font-semibold">Folders</div>
             <SidebarItem icon="📦" label="All Videos" count={VIDEOS_DATA.videos.length}
               active={activeFolder === "all"} onClick={() => setActiveFolder("all")} />
             {Object.entries(folderCounts).sort().map(([f, c]) => (
@@ -643,7 +643,7 @@
                 active={activeFolder === f} onClick={() => setActiveFolder(f)} />
             ))}
 
-            <div className="text-[10px] text-[#888888] px-3 mb-1 mt-6 tracking-wider uppercase font-semibold">Content Type</div>
+            <div className="text-[10px] text-[#71717A] px-3 mb-1 mt-6 tracking-wider uppercase font-semibold">Content Type</div>
             <SidebarItem icon="🌐" label="All Types" count={stats.summarized}
               active={typeFilter === "all"} onClick={() => setTypeFilter("all")} />
             {Object.entries(typeCounts).sort((a, b) => b[1] - a[1]).map(([t, c]) => {
@@ -654,7 +654,7 @@
               ) : null;
             })}
 
-            <div className="text-[10px] text-[#888888] px-3 mb-1 mt-6 tracking-wider uppercase font-semibold">Status</div>
+            <div className="text-[10px] text-[#71717A] px-3 mb-1 mt-6 tracking-wider uppercase font-semibold">Status</div>
             <SidebarItem icon="🌐" label="All" count={stats.total}
               active={statusFilter === "all"} onClick={() => setStatusFilter("all")} />
             <SidebarItem icon="🆕" label="Todo" count={stats.unwatched}
@@ -662,22 +662,22 @@
             <SidebarItem icon="✓" label="Completed" count={stats.watched}
               active={statusFilter === "watched"} onClick={() => setStatusFilter("watched")} />
 
-            <div className="mt-auto pt-6 border-t border-[#E9E9E7] text-xs text-[#787774] space-y-1.5 px-1">
-              <div className="flex justify-between"><span>Total Time</span><span className="text-[#111111] font-medium">{formatHours(stats.totalSec)}</span></div>
-              <div className="flex justify-between"><span>Completed</span><span className="text-[#059669] font-medium">{formatHours(stats.watchedSec)}</span></div>
-              <div className="flex justify-between"><span>Remaining</span><span className="text-[#D97706] font-medium">{formatHours(stats.totalSec - stats.watchedSec)}</span></div>
-              <div className="mt-2 h-1 bg-[#EAEAEA] rounded-full overflow-hidden">
-                <div className="h-full bg-[#2563EB] transition-all" style={{ width: `${progressPct}%` }} />
+            <div className="mt-auto pt-6 border-t border-[#27272A] text-xs text-[#A1A1AA] space-y-1.5 px-1">
+              <div className="flex justify-between"><span>Total Time</span><span className="text-[#FFFFFF] font-medium">{formatHours(stats.totalSec)}</span></div>
+              <div className="flex justify-between"><span>Completed</span><span className="text-[#D4D4D8] font-medium">{formatHours(stats.watchedSec)}</span></div>
+              <div className="flex justify-between"><span>Remaining</span><span className="text-[#D4D4D8] font-medium">{formatHours(stats.totalSec - stats.watchedSec)}</span></div>
+              <div className="mt-2 h-1 bg-[#202024] rounded-full overflow-hidden">
+                <div className="h-full bg-[#FFFFFF] transition-all" style={{ width: `${progressPct}%` }} />
               </div>
-              <div className="text-center text-[11px] text-[#888888]">
+              <div className="text-center text-[11px] text-[#71717A]">
                 {stats.watched}/{stats.total} ({progressPct}%)
               </div>
-              <div className="text-center text-[10px] text-[#999999] pt-1">
+              <div className="text-center text-[10px] text-[#71717A] pt-1">
                 AI Scanned: {stats.summarized}/{stats.total}
               </div>
               <button
                 onClick={() => setShowAbout(true)}
-                className="w-full mt-2 text-[11px] text-[#787774] hover:text-[#111111] hover:bg-[#EAEAEA] py-1.5 rounded-md transition-colors"
+                className="w-full mt-2 text-[11px] text-[#A1A1AA] hover:text-[#FFFFFF] hover:bg-[#202024] py-1.5 rounded-md transition-colors"
               >
                 System Information
               </button>
@@ -687,21 +687,21 @@
           <main className="flex-1 p-8 lg:p-12 max-w-[1600px]">
             <div className="flex flex-wrap gap-3 items-center mb-8">
               <div className="relative flex-1 min-w-[240px] group">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#999999] transition-colors group-focus-within:text-[#111111]">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#71717A] transition-colors group-focus-within:text-[#FFFFFF]">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 </span>
                 <input
                   type="text" value={search} onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search knowledge base..."
-                  className="w-full bg-[#FFFFFF] border border-[#E9E9E7] rounded-md pl-10 pr-12 py-2 text-sm focus:outline-none focus:border-[#CCCCCC] text-[#111111] placeholder:text-[#999999] transition-colors shadow-[0_2px_8px_rgba(55,53,47,0.04)] hover:border-[#CCCCCC]"
+                  className="w-full bg-[#18181B] border border-[#27272A] rounded-md pl-10 pr-12 py-2 text-sm focus:outline-none focus:border-[#3F3F46] text-[#FFFFFF] placeholder:text-[#71717A] transition-colors shadow-[0_12px_24px_rgba(0,0,0,0.22)] hover:border-[#3F3F46]"
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] text-[#787774] bg-[#F5F5F5] border border-[#E9E9E7] rounded shadow-sm">⌘</kbd>
-                  <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] text-[#787774] bg-[#F5F5F5] border border-[#E9E9E7] rounded shadow-sm">K</kbd>
+                  <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] text-[#A1A1AA] bg-[#18181B] border border-[#27272A] rounded shadow-sm">⌘</kbd>
+                  <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] text-[#A1A1AA] bg-[#18181B] border border-[#27272A] rounded shadow-sm">K</kbd>
                 </div>
               </div>
               <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
-                className="bg-[#FFFFFF] border border-[#E9E9E7] rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#CCCCCC] text-[#787774] cursor-pointer hover:border-[#CCCCCC] transition-colors shadow-[0_2px_8px_rgba(55,53,47,0.04)]">
+                className="bg-[#18181B] border border-[#27272A] rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#3F3F46] text-[#A1A1AA] cursor-pointer hover:border-[#3F3F46] transition-colors shadow-[0_12px_24px_rgba(0,0,0,0.22)]">
                 <option value="date_desc">Latest Additions</option>
                 <option value="date_asc">Oldest First</option>
                 <option value="score_desc">Highest Actionability</option>
@@ -711,20 +711,20 @@
               </select>
             </div>
 
-            <div className="mb-6 flex items-baseline justify-between border-b border-[#E9E9E7] pb-4">
-              <h2 className="text-xl font-semibold text-[#111111] tracking-tight">
+            <div className="mb-6 flex items-baseline justify-between border-b border-[#27272A] pb-4">
+              <h2 className="text-xl font-semibold text-[#FFFFFF] tracking-tight">
                 {activeFolder === "all" ? "All Videos" : activeFolder}
-                <span className="ml-3 text-[13px] text-[#999999] font-medium px-2 py-0.5 bg-[#F5F5F5] rounded-full border border-[#E9E9E7]">{filtered.length}</span>
+                <span className="ml-3 text-[13px] text-[#71717A] font-medium px-2 py-0.5 bg-[#18181B] rounded-full border border-[#27272A]">{filtered.length}</span>
               </h2>
               {(typeFilter !== "all" || statusFilter !== "all") && (
                 <div className="flex gap-2">
                   {typeFilter !== "all" && CONTENT_TYPE_META[typeFilter] && (
-                    <span className="text-xs px-2 py-1 bg-[#F5F5F5] text-[#787774] border border-[#E9E9E7] rounded-md">
+                    <span className="text-xs px-2 py-1 bg-[#18181B] text-[#A1A1AA] border border-[#27272A] rounded-md">
                       {CONTENT_TYPE_META[typeFilter].label}
                     </span>
                   )}
                   {statusFilter !== "all" && (
-                     <span className="text-xs px-2 py-1 bg-[#F5F5F5] text-[#787774] border border-[#E9E9E7] rounded-md">
+                     <span className="text-xs px-2 py-1 bg-[#18181B] text-[#A1A1AA] border border-[#27272A] rounded-md">
                       {statusFilter === "watched" ? "Completed" : "Todo"}
                     </span>
                   )}
@@ -733,12 +733,12 @@
             </div>
 
             {filtered.length === 0 ? (
-              <div className="text-center py-24 text-[#999999]">
+              <div className="text-center py-24 text-[#71717A]">
                 <div className="text-4xl mb-4 opacity-30">⊘</div>
                 <p className="text-sm">No videos found matching criteria.</p>
                 <button
                   onClick={() => { setSearch(""); setActiveFolder("all"); setStatusFilter("all"); setTypeFilter("all"); }}
-                  className="mt-4 text-xs text-[#787774] hover:text-[#111111] transition-colors border border-[#E9E9E7] bg-[#F5F5F5] px-3 py-1.5 rounded-md">Clear Filters</button>
+                  className="mt-4 text-xs text-[#A1A1AA] hover:text-[#FFFFFF] transition-colors border border-[#27272A] bg-[#18181B] px-3 py-1.5 rounded-md">Clear Filters</button>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -754,9 +754,9 @@
               </div>
             )}
 
-            <footer className="mt-12 pt-6 border-t border-[#E9E9E7] text-xs text-[#999999] flex justify-between items-center">
+            <footer className="mt-12 pt-6 border-t border-[#27272A] text-xs text-[#71717A] flex justify-between items-center">
               <span>{stats.summarized}/{stats.total} videos summarized</span>
-              <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-[#2563EB] rounded-full animate-pulse"></div> System Online</span>
+              <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-[#FFFFFF] rounded-full animate-pulse"></div> System Online</span>
             </footer>
           </main>
 
