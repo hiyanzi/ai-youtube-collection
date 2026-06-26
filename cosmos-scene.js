@@ -172,8 +172,8 @@
 
   function createPlanetTexture(THREE, palette, seed) {
     const canvas = document.createElement("canvas");
-    canvas.width = 256;
-    canvas.height = 128;
+    canvas.width = 512;
+    canvas.height = 256;
     const context = canvas.getContext("2d");
     const base = context.createLinearGradient(0, 0, canvas.width, canvas.height);
 
@@ -183,31 +183,54 @@
     context.fillStyle = base;
     context.fillRect(0, 0, canvas.width, canvas.height);
 
-    for (let i = 0; i < 34; i += 1) {
-      const y = (i * 29 + seed * 17) % canvas.height;
-      const height = 3 + ((i * 7 + seed) % 12);
-      const alpha = 0.07 + ((i * 13) % 18) / 100;
+    // 1. Swirling/氣旋條紋
+    for (let j = 0; j < 4; j += 1) {
+      context.strokeStyle = `rgba(255, 255, 255, ${0.05 + (j * 0.02)})`;
+      context.lineWidth = 4 + (j * 2);
+      context.beginPath();
+      for (let x = 0; x <= canvas.width; x += 10) {
+        const y = canvas.height * 0.45 + Math.sin(x * 0.04 + seed + j) * 32 + Math.cos(x * 0.015 - seed * 2) * 16;
+        if (x === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      }
+      context.stroke();
+    }
+
+    // 2. Wind shear bands/細密條紋
+    for (let i = 0; i < 48; i += 1) {
+      const y = (i * 19 + seed * 29) % canvas.height;
+      const height = 2.5 + ((i * 5 + seed) % 10);
+      const alpha = 0.08 + ((i * 11) % 15) / 100;
       context.fillStyle = i % 2 === 0 ? `rgba(255,255,255,${alpha})` : `rgba(0,0,0,${alpha})`;
       context.beginPath();
       context.ellipse(
         canvas.width * 0.5,
         y,
-        canvas.width * (0.58 + ((i + seed) % 8) * 0.03),
+        canvas.width * (0.68 + ((i + seed) % 6) * 0.04),
         height,
-        ((i + seed) % 6) * 0.12,
+        Math.sin(y * 0.08) * 0.04 + ((i + seed) % 4) * 0.02,
         0,
         Math.PI * 2
       );
       context.fill();
     }
 
-    for (let i = 0; i < 95; i += 1) {
-      const x = (i * 41 + seed * 23) % canvas.width;
-      const y = (i * 19 + seed * 31) % canvas.height;
-      const radius = 0.5 + ((i + seed) % 4) * 0.55;
-      context.fillStyle = `rgba(255,255,255,${0.04 + ((i * 5) % 12) / 100})`;
+    // 3. Crater/隕石坑噪點
+    for (let i = 0; i < 120; i += 1) {
+      const x = (i * 37 + seed * 43) % canvas.width;
+      const y = (i * 23 + seed * 19) % canvas.height;
+      const radius = 1.0 + ((i + seed) % 6) * 0.8;
+      
+      // Shadow (dark side)
+      context.fillStyle = `rgba(0,0,0,${0.08 + ((i * 3) % 12) / 100})`;
       context.beginPath();
       context.arc(x, y, radius, 0, Math.PI * 2);
+      context.fill();
+      
+      // Highlight (light side)
+      context.fillStyle = `rgba(255,255,255,${0.06 + ((i * 4) % 10) / 100})`;
+      context.beginPath();
+      context.arc(x - radius * 0.3, y - radius * 0.3, radius * 0.7, 0, Math.PI * 2);
       context.fill();
     }
 
@@ -244,7 +267,7 @@
     group.userData.planet = planet;
 
     const atmosphere = new THREE.Mesh(
-      new THREE.SphereGeometry(config.radius * 1.045, 48, 24),
+      new THREE.SphereGeometry(config.radius * 1.06, 48, 24),
       new THREE.MeshBasicMaterial({
         color: config.glow,
         transparent: true,
@@ -281,7 +304,7 @@
     const configs = isMobile
       ? [
           {
-            radius: 5.8,
+            radius: 9.0,
             position: [17, -5, -50],
             rotation: [-0.46, 0.28, -0.78],
             spinSpeed: 0.09,
@@ -299,9 +322,9 @@
             opacity: 0.82,
             palette: ["#162033", "#3a6d83", "#d0a96a"],
             glow: "#7dd3fc",
-            glowOpacity: 0.08,
+            glowOpacity: 0.14,
             emissive: "#102437",
-            emissiveIntensity: 0.18,
+            emissiveIntensity: 0.24,
             seed: 3,
             ring: {
               color: "#d6efff",
@@ -312,7 +335,7 @@
         ]
       : [
           {
-            radius: 8.8,
+            radius: 13.6,
             position: [50, 8, -54],
             rotation: [-0.48, 0.28, -0.78],
             spinSpeed: 0.085,
@@ -330,9 +353,9 @@
             opacity: 0.9,
             palette: ["#111827", "#376b82", "#d5a45d"],
             glow: "#7dd3fc",
-            glowOpacity: 0.1,
+            glowOpacity: 0.18,
             emissive: "#102a3f",
-            emissiveIntensity: 0.16,
+            emissiveIntensity: 0.22,
             seed: 5,
             ring: {
               color: "#d8f3ff",
@@ -341,7 +364,7 @@
             }
           },
           {
-            radius: 3.6,
+            radius: 5.4,
             position: [18, 24, -82],
             rotation: [0.28, -0.26, -0.78],
             spinSpeed: -0.12,
@@ -359,13 +382,13 @@
             opacity: 0.72,
             palette: ["#2a1638", "#7c4f7f", "#f1c27d"],
             glow: "#f0abfc",
-            glowOpacity: 0.07,
+            glowOpacity: 0.12,
             emissive: "#2b1538",
-            emissiveIntensity: 0.12,
+            emissiveIntensity: 0.18,
             seed: 11
           },
           {
-            radius: 2.8,
+            radius: 4.2,
             position: [68, -22, -104],
             rotation: [-0.18, 0.46, -0.78],
             spinSpeed: 0.16,
@@ -383,9 +406,9 @@
             opacity: 0.7,
             palette: ["#172554", "#3b82f6", "#dbeafe"],
             glow: "#93c5fd",
-            glowOpacity: 0.07,
+            glowOpacity: 0.12,
             emissive: "#172554",
-            emissiveIntensity: 0.1,
+            emissiveIntensity: 0.15,
             seed: 17
           }
         ];

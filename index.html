@@ -320,8 +320,8 @@
     @keyframes sloganEntrance {
       0% {
         opacity: 0;
-        transform: translateY(24px) scale(0.96);
-        filter: blur(8px);
+        transform: translateY(24px) scale(0.92);
+        filter: blur(12px);
       }
       100% {
         opacity: 1;
@@ -335,18 +335,29 @@
       margin: 18px 0 0;
       font-size: 72px;
       font-weight: 700;
-      line-height: 1.1;
+      line-height: 1.2;
       letter-spacing: -0.015em;
-      opacity: 0;
-      animation: sloganEntrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
     }
 
-    .hero h1 span {
+    .slogan-word {
+      display: inline-block;
+      opacity: 0;
+      filter: blur(12px);
+      transform: translateY(24px) scale(0.92);
+      animation: sloganEntrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: calc(var(--delay) * 75ms);
+    }
+
+    .slogan-gradient {
       background: linear-gradient(135deg, #ffffff 0%, #7dd3fc 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 25px rgba(125, 211, 252, 0.22));
+    }
+
+    .slogan-break {
       display: block;
-      filter: drop-shadow(0 0 20px rgba(125, 211, 252, 0.15));
+      height: 0;
     }
 
     .hero-copy {
@@ -1051,7 +1062,20 @@
       <section class="hero" aria-labelledby="hero-title">
         <div class="hero-content">
           <div class="kicker">AI Video Learning Intelligence</div>
-          <h1 id="hero-title">把收藏影片<span>變成學習路線</span></h1>
+          <h1 id="hero-title">
+            <span class="slogan-word" style="--delay: 1">把</span>
+            <span class="slogan-word" style="--delay: 2">收</span>
+            <span class="slogan-word" style="--delay: 3">藏</span>
+            <span class="slogan-word" style="--delay: 4">影</span>
+            <span class="slogan-word" style="--delay: 5">片</span>
+            <span class="slogan-break"></span>
+            <span class="slogan-word slogan-gradient" style="--delay: 6">變</span>
+            <span class="slogan-word slogan-gradient" style="--delay: 7">成</span>
+            <span class="slogan-word slogan-gradient" style="--delay: 8">學</span>
+            <span class="slogan-word slogan-gradient" style="--delay: 9">習</span>
+            <span class="slogan-word slogan-gradient" style="--delay: 10">路</span>
+            <span class="slogan-word slogan-gradient" style="--delay: 11">線</span>
+          </h1>
           <p class="hero-copy">
             AI 摘要、分類與進度，直接找到下一支影片。
           </p>
