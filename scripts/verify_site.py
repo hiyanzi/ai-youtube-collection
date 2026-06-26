@@ -3,7 +3,7 @@
 
 檢查項目：
   1. data/videos.js 能被正確解析，且有影片資料。
-  2. index.html / preview.html 的 CDN <script> 都有「鎖定版本」
+  2. app.html / preview.html 的 CDN <script> 都有「鎖定版本」
      （react / react-dom / @babel/standalone）。沒鎖版本 → unpkg 會自動升級，
      Babel 升到 8 後瀏覽器內即時編譯會壞掉，整個 React App 不會渲染。
 
@@ -20,7 +20,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 JS_PATH = PROJECT_ROOT / "data" / "videos.js"
-HTML_FILES = ["index.html", "preview.html"]
+HTML_FILES = ["app.html", "preview.html"]
 
 # 需要鎖版本的 CDN 套件（套件名 -> 在 unpkg 上的路徑關鍵字）
 PINNED_PKGS = {
@@ -73,13 +73,13 @@ def verify(verbose: bool = True) -> bool:
     errs = check_videos_js() + check_cdn_pins()
     if errs:
         if verbose:
-            print("\n❌ 網站健康檢查未通過：")
+            print("\n[FAIL] 網站健康檢查未通過：")
             for e in errs:
                 print(f"   - {e}")
             print("   詳見 README.md → 疑難排解")
         return False
     if verbose:
-        print("\n✅ 網站健康檢查通過（videos.js 有效、CDN 版本已鎖定）")
+        print("\n[OK] 網站健康檢查通過（videos.js 有效、CDN 版本已鎖定）")
     return True
 
 
