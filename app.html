@@ -780,13 +780,17 @@
       const editingVideo = editingNote ? VIDEOS_DATA.videos.find(v => v.id === editingNote) : null;
       const progressPct = stats.total > 0 ? Math.round((stats.watched / stats.total) * 100) : 0;
 
+      const handleHeaderClick = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+
       return (
         <div className="min-h-screen flex flex-col">
           {/* Top Header Bar */}
-          <header className="z-20 px-4 md:px-7 py-4 md:py-5 border-b border-zinc-800/70 bg-zinc-950/80 backdrop-blur-xl">
+          <header className="sticky top-0 z-30 px-4 md:px-7 py-4 md:py-5 border-b border-zinc-800/70 bg-zinc-950/80 backdrop-blur-xl">
             <div className="flex items-center justify-between gap-4 max-w-[1760px] mx-auto">
               <button onClick={() => setSidebarOpen(true)} className="md:hidden text-xl text-zinc-300">☰</button>
-              <div className="min-w-0 flex-1">
+              <div onClick={handleHeaderClick} className="min-w-0 flex-1 cursor-pointer select-none">
                 <p className="truncate text-[10px] sm:text-[11px] font-semibold tracking-[0.16em] sm:tracking-[0.22em] text-zinc-100 uppercase">AI Video Knowledge Base</p>
                 <h1 className="truncate text-xl sm:text-2xl md:text-3xl font-bold gradient-text leading-tight">AI 學習影片工作台</h1>
               </div>
@@ -808,7 +812,7 @@
           )}
 
           <div className="flex flex-1 flex-col md:flex-row">
-          <aside className={`fixed top-0 left-0 w-72 h-full z-50 glass p-4 flex flex-col gap-1 overflow-y-auto scroll-hide transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 md:w-60 md:m-4 md:mr-0 md:rounded-lg md:sticky md:top-4 md:h-[calc(100vh-2rem)] md:z-10`}>
+          <aside className={`fixed top-0 left-0 w-72 h-full z-50 glass p-4 flex flex-col gap-1 overflow-y-auto scroll-hide transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 md:w-60 md:m-4 md:mr-0 md:rounded-lg md:sticky md:top-[92px] md:h-[calc(100vh-7rem)] md:z-10`}>
             <div className="mb-3 px-1 flex items-center justify-between md:hidden">
               <h2 className="text-base font-semibold text-zinc-200">選單</h2>
               <button onClick={() => setSidebarOpen(false)} className="text-lg text-zinc-500 hover:text-zinc-300 p-1">✕</button>
