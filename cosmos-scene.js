@@ -310,7 +310,7 @@
             spinSpeed: 0.09,
             orbitSpeed: 0,
             travel: {
-              phase: 0.24,
+              phase: 0.05,
               speed: 0.035,
               left: -46,
               right: 50,
@@ -341,7 +341,7 @@
             spinSpeed: 0.085,
             orbitSpeed: 0,
             travel: {
-              phase: 0.45,
+              phase: 0.05,
               speed: 0.032,
               left: -88,
               right: 92,
