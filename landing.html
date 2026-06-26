@@ -49,13 +49,10 @@
       content: "";
       position: fixed;
       inset: 0;
-      z-index: -3;
+      z-index: -4;
       background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 28%),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-        #0A0A0C;
-      background-size: auto, 72px 72px, 72px 72px, auto;
+        linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 24%),
+        #03040A;
     }
 
     a {
@@ -74,26 +71,52 @@
       isolation: isolate;
     }
 
-    .synapse-scene {
+    .cosmos-scene {
       position: fixed;
       inset: 0;
-      z-index: -2;
+      z-index: -3;
       overflow: hidden;
       pointer-events: none;
+      background:
+        radial-gradient(circle, rgba(255, 255, 255, 0.18) 0 1px, transparent 1.4px),
+        radial-gradient(circle, rgba(125, 211, 252, 0.18) 0 1px, transparent 1.7px),
+        #03040A;
+      background-position: 0 0, 42px 26px, 0 0;
+      background-size: 130px 130px, 190px 190px, auto;
     }
 
-    #synapseCanvas {
+    .cosmos-scene::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(3, 4, 10, 0.94) 0%, rgba(3, 4, 10, 0.6) 36%, rgba(3, 4, 10, 0.08) 67%, rgba(3, 4, 10, 0.44) 100%),
+        linear-gradient(180deg, rgba(3, 4, 10, 0.14), rgba(3, 4, 10, 0.04) 48%, rgba(3, 4, 10, 0.72));
+    }
+
+    .cosmos-scene canvas {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
-      opacity: 0.74;
+      opacity: 0;
+      transition: opacity 700ms ease;
     }
 
-    .noise {
+    .cosmos-scene.is-webgl-ready canvas {
+      opacity: 1;
+    }
+
+    .cosmos-scene.is-webgl-ready {
+      background: #03040A;
+    }
+
+    .cosmos-grain {
       position: fixed;
       inset: 0;
       z-index: -1;
       pointer-events: none;
-      opacity: 0.16;
+      opacity: 0.12;
       background-image:
         linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
         linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
@@ -282,6 +305,7 @@
       max-width: 760px;
       position: relative;
       z-index: 2;
+      text-shadow: 0 18px 60px rgba(0, 0, 0, 0.48);
     }
 
     .kicker {
@@ -996,10 +1020,8 @@
 </head>
 <body>
   <div class="page-shell">
-    <div class="synapse-scene" aria-hidden="true">
-      <canvas id="synapseCanvas"></canvas>
-    </div>
-    <div class="noise" aria-hidden="true"></div>
+    <div class="cosmos-scene" id="cosmosScene" aria-hidden="true"></div>
+    <div class="cosmos-grain" aria-hidden="true"></div>
 
     <header class="topbar">
       <div class="topbar-inner">
@@ -1244,87 +1266,19 @@
     </footer>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="cosmos-scene.js"></script>
   <script>
-    const canvas = document.getElementById("synapseCanvas");
-    const ctx = canvas.getContext("2d");
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let width = 0;
-    let height = 0;
-    let frame = 0;
+    const cosmosContainer = document.getElementById("cosmosScene");
 
-    function resizeCanvas() {
-      const ratio = Math.min(window.devicePixelRatio || 1, 2);
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = Math.floor(width * ratio);
-      canvas.height = Math.floor(height * ratio);
-      canvas.style.width = width + "px";
-      canvas.style.height = height + "px";
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    }
-
-    function drawNetwork() {
-      ctx.clearRect(0, 0, width, height);
-      const centerX = width * 0.62;
-      const centerY = height * 0.44;
-      const radius = Math.min(width, height) * 0.34;
-      const nodes = [];
-
-      for (let i = 0; i < 22; i += 1) {
-        const angle = (Math.PI * 2 * i) / 22 + frame * 0.002;
-        const band = i % 3 === 0 ? 0.42 : i % 3 === 1 ? 0.68 : 0.92;
-        nodes.push({
-          x: centerX + Math.cos(angle) * radius * band,
-          y: centerY + Math.sin(angle) * radius * band * 0.58
-        });
-      }
-
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.09)";
-      for (let i = 0; i < nodes.length; i += 1) {
-        for (let j = i + 1; j < nodes.length; j += 1) {
-          const dx = nodes[i].x - nodes[j].x;
-          const dy = nodes[i].y - nodes[j].y;
-          const distance = Math.hypot(dx, dy);
-          if (distance < radius * 0.42) {
-            ctx.globalAlpha = Math.max(0.08, 1 - distance / (radius * 0.42)) * 0.32;
-            ctx.beginPath();
-            ctx.moveTo(nodes[i].x, nodes[i].y);
-            ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.stroke();
-          }
-        }
-      }
-
-      ctx.globalAlpha = 1;
-      nodes.forEach((node, index) => {
-        const pulse = 2 + Math.sin(frame * 0.03 + index) * 1.2;
-        ctx.fillStyle = "rgba(255, 255, 255, 0.78)";
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, Math.max(1.6, pulse), 0, Math.PI * 2);
-        ctx.fill();
+    if (cosmosContainer && window.createCosmosScene) {
+      window.aiYoutubeCosmosScene = window.createCosmosScene(cosmosContainer, {
+        density: "immersive",
+        intensity: "landing",
+        accent: "#7dd3fc",
+        motion: "normal"
       });
-
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
-      for (let i = 0; i < 5; i += 1) {
-        const y = height * 0.68 + i * 42;
-        ctx.beginPath();
-        ctx.moveTo(width * 0.04, y);
-        ctx.lineTo(width * 0.96, y + Math.sin(frame * 0.01 + i) * 12);
-        ctx.stroke();
-      }
-
-      frame += reducedMotion ? 0 : 1;
-      if (!reducedMotion) requestAnimationFrame(drawNetwork);
     }
-
-    resizeCanvas();
-    drawNetwork();
-
-    window.addEventListener("resize", () => {
-      resizeCanvas();
-      drawNetwork();
-    });
   </script>
 </body>
 </html>
