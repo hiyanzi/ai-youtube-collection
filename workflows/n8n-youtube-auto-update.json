@@ -23,7 +23,7 @@
     },
     {
       "parameters": {
-        "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"$ErrorActionPreference = 'Stop'; Set-Location 'C:\\Claude專案\\AI影片收藏網站\\AI Youtube影片收藏網站'; git pull --ff-only; py -m pip install -r requirements.txt; py scripts\\fetch_playlists.py; py scripts\\summarize.py; $changes = git status --porcelain -- config.json data/videos.js; if ([string]::IsNullOrWhiteSpace($changes)) { Write-Output 'NO_CHANGES'; exit 0 }; git add config.json data/videos.js; git commit -m 'Auto update YouTube video collection'; git push; Write-Output 'UPDATED'\""
+        "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"$ErrorActionPreference = 'Stop'; Set-Location 'C:\\Claude專案\\AI影片收藏網站\\AI Youtube影片收藏網站'; git pull --ff-only; py -m pip install -r requirements.txt; py scripts\\fetch_playlists.py; py scripts\\summarize.py; py scripts\\verify_site.py; if ($LASTEXITCODE -ne 0) { Write-Output 'HEALTH_CHECK_FAILED'; exit 1 }; $changes = git status --porcelain; if ([string]::IsNullOrWhiteSpace($changes)) { Write-Output 'NO_CHANGES'; exit 0 }; git add -A; git commit -m 'Auto update YouTube video collection'; git push; Write-Output 'UPDATED'\""
       },
       "id": "aeeec2a5-b476-4f51-b8b7-0e51b0732c3a",
       "name": "Fetch, Summarize, Commit, Push",

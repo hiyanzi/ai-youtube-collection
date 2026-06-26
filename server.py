@@ -1,40 +1,81 @@
-from flask import Flask, jsonify
-import subprocess
+from __future__ import annotations
+
 import os
+import subprocess
+from pathlib import Path
+
+from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-# 設定你的專案根目錄路徑
-PROJECT_DIR = r"C:\Claude專案\AI影片收藏網站\AI Youtube影片收藏網站"
+PROJECT_DIR = Path(
+    os.getenv("PROJECT_DIR", "/workspace/ai-youtube-collection")
+).resolve()
 
-@app.route('/trigger-update', methods=['POST'])
+
+def run(command: list[str], cwd: Path = PROJECT_DIR) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        command,
+        cwd=cwd,
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+
+
+@app.route("/healthz", methods=["GET"])
+def healthz():
+    return jsonify({"status": "ok", "project_dir": str(PROJECT_DIR)}), 200
+
+
+@app.route("/trigger-update", methods=["POST"])
 def trigger_update():
     try:
-        print("收到 n8n 觸發訊號，開始執行更新管線...")
-        
-        # 1. 執行 fetch_playlists.py
-        fetch_path = os.path.join(PROJECT_DIR, "scripts", "fetch_playlists.py")
-        subprocess.run(["python", fetch_path], check=True)
-        
-        # 2. 執行 summarize.py
-        summarize_path = os.path.join(PROJECT_DIR, "scripts", "summarize.py")
-        subprocess.run(["python", summarize_path], check=True)
-        
-        # 3. 執行 Git Commit & Push (讓 Vercel 自動更新)
-        # 這裡假設你已經設定好 Git 的自動驗證
-        subprocess.run(["git", "add", "."], cwd=PROJECT_DIR, check=True)
-        subprocess.run(["git", "commit", "-m", "🤖 auto: update youtube collection via n8n"], cwd=PROJECT_DIR, check=True)
-        subprocess.run(["git", "push"], cwd=PROJECT_DIR, check=True)
-        
+        run(["git", "config", "--global", "--add", "safe.directory", str(PROJECT_DIR)])
+        run(["git", "config", "--global", "user.name", "n8n Auto Update"])
+        run(["git", "config", "--global", "user.email", "n8n@roylin1985.com"])
+        run(["git", "pull", "--ff-only"])
+        run(["python3", "-m", "pip", "install", "-r", "requirements.txt"])
+        run(["python3", "scripts/fetch_playlists.py"])
+        run(["python3", "scripts/summarize.py"])
+
+        diff = subprocess.run(
+            [
+                "git",
+                "diff",
+                "--quiet",
+                "--ignore-space-at-eol",
+                "-I",
+                '^(// Auto-generated|[[:space:]]*"generated_at":)',
+                "--",
+                "config.json",
+                "data/videos.js",
+            ],
+            cwd=PROJECT_DIR,
+        )
+        if diff.returncode == 0:
+            run(["git", "restore", "config.json", "data/videos.js"])
+            return jsonify({"status": "success", "stdout": "NO_CHANGES"}), 200
+
+        run(["git", "add", "config.json", "data/videos.js"])
+        run(["git", "commit", "-m", "Auto update YouTube video collection"])
+        run(["git", "push"])
         return jsonify({"status": "success", "stdout": "UPDATED"}), 200
 
-    except subprocess.CalledProcessError as e:
-        print(f"執行出錯: {str(e)}")
-        return jsonify({"status": "error", "stdout": f"Failed at command: {e.cmd}"}), 500
-    except Exception as e:
-        print(f"系統錯誤: {str(e)}")
-        return jsonify({"status": "error", "stdout": str(e)}), 500
+    except subprocess.CalledProcessError as error:
+        output = "\n".join(
+            part
+            for part in [error.stdout, error.stderr]
+            if part
+        ).strip()
+        return jsonify({
+            "status": "error",
+            "stdout": output or str(error),
+            "command": error.cmd,
+        }), 500
+    except Exception as error:
+        return jsonify({"status": "error", "stdout": str(error)}), 500
 
-if __name__ == '__main__':
-    # 啟動在本機的 5000 端口
-    app.run(host='0.0.0.0', port=5000)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)

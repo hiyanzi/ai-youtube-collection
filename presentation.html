@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI YouTube 影音知識庫 — 作品簡報</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+      background: #ffffff;
+      color: #1a1a2e;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== Presentation Container ===== */
+    .presentation {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ===== Slide ===== */
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 60px 80px;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                  transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .slide.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+      z-index: 10;
+    }
+    .slide.exit {
+      opacity: 0;
+      transform: translateY(-30px);
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    /* ===== Stagger children ===== */
+    .slide.active .fade-up {
+      animation: fadeUp 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+    .slide.active .fade-up:nth-child(1) { animation-delay: 0.15s; }
+    .slide.active .fade-up:nth-child(2) { animation-delay: 0.35s; }
+    .slide.active .fade-up:nth-child(3) { animation-delay: 0.55s; }
+    .slide.active .fade-up:nth-child(4) { animation-delay: 0.75s; }
+    .slide.active .fade-up:nth-child(5) { animation-delay: 0.95s; }
+    .slide.active .fade-up:nth-child(6) { animation-delay: 1.15s; }
+    .slide.active .fade-up:nth-child(7) { animation-delay: 1.35s; }
+    .slide.active .fade-up:nth-child(8) { animation-delay: 1.55s; }
+    .fade-up { opacity: 0; transform: translateY(18px); }
+
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== Typography ===== */
+    .slide-number {
+      position: absolute;
+      top: 32px;
+      left: 48px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      color: #94a3b8;
+      text-transform: uppercase;
+    }
+    .kicker {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #0d9488;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: clamp(36px, 5vw, 64px);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: #0f172a;
+      max-width: 900px;
+      text-align: center;
+    }
+    h2 {
+      font-size: clamp(28px, 3.5vw, 44px);
+      font-weight: 700;
+      line-height: 1.25;
+      letter-spacing: -0.015em;
+      color: #0f172a;
+      margin-bottom: 20px;
+    }
+    h3 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      font-size: clamp(16px, 2vw, 22px);
+      color: #475569;
+      max-width: 700px;
+      text-align: center;
+      line-height: 1.7;
+      font-weight: 400;
+    }
+    .body-text {
+      font-size: 17px;
+      color: #475569;
+      line-height: 1.75;
+      max-width: 800px;
+    }
+
+    /* ===== Gradient text ===== */
+    .gradient-text {
+      background: linear-gradient(135deg, #0f172a 0%, #0d9488 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ===== Cards / Boxes ===== */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 1000px;
+    }
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 28px 24px;
+      transition: transform 0.25s, box-shadow 0.25s;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+    }
+    .card-icon {
+      font-size: 32px;
+      margin-bottom: 14px;
+      display: block;
+    }
+    .card h3 { font-size: 18px; margin-bottom: 8px; }
+    .card p { font-size: 14.5px; color: #64748b; line-height: 1.65; }
+
+    /* ===== Pain point list ===== */
+    .pain-list {
+      list-style: none;
+      max-width: 760px;
+      width: 100%;
+    }
+    .pain-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 18px 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 17px;
+      color: #334155;
+      line-height: 1.65;
+    }
+    .pain-list li:last-child { border-bottom: none; }
+    .pain-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* ===== Architecture ===== */
+    .arch-flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 1100px;
+    }
+    .arch-node {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 20px 22px;
+      text-align: center;
+      min-width: 150px;
+      max-width: 200px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .arch-node:hover {
+      transform: scale(1.04);
+      border-color: #0d9488;
+    }
+    .arch-node .icon { font-size: 28px; margin-bottom: 8px; display: block; }
+    .arch-node .label { font-size: 14px; font-weight: 600; color: #0f172a; }
+    .arch-node .desc { font-size: 12px; color: #64748b; margin-top: 4px; }
+    .arch-arrow {
+      font-size: 22px;
+      color: #cbd5e1;
+      padding: 0 8px;
+      flex-shrink: 0;
+    }
+
+    /* ===== Tech highlight cards ===== */
+    .tech-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 30px 28px;
+      border-left: 4px solid #0d9488;
+    }
+    .tech-card h3 {
+      font-size: 19px;
+      margin-bottom: 10px;
+      color: #0f172a;
+    }
+    .tech-card p {
+      font-size: 15px;
+      color: #64748b;
+      line-height: 1.7;
+    }
+    .tech-card .highlight {
+      color: #0d9488;
+      font-weight: 600;
+    }
+
+    /* ===== Stats ===== */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 700px;
+      width: 100%;
+    }
+    .stat-box {
+      text-align: center;
+      padding: 28px 16px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+    }
+    .stat-number {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .stat-number.teal { color: #0d9488; }
+    .stat-number.blue { color: #2563eb; }
+    .stat-number.dark { color: #0f172a; }
+    .stat-label {
+      font-size: 13px;
+      color: #94a3b8;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* ===== Learnings ===== */
+    .learning-list {
+      list-style: none;
+      max-width: 800px;
+      width: 100%;
+      counter-reset: learning;
+    }
+    .learning-list li {
+      counter-increment: learning;
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+      padding: 20px 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 16px;
+      color: #334155;
+      line-height: 1.7;
+    }
+    .learning-list li:last-child { border-bottom: none; }
+    .learning-list li::before {
+      content: counter(learning);
+      flex-shrink: 0;
+      width: 34px;
+      height: 34px;
+      background: #0d9488;
+      color: #fff;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+    .learning-list strong { color: #0f172a; }
+
+    /* ===== Tech badge ===== */
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 16px;
+    }
+    .badge {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 999px;
+      background: #f0fdfa;
+      color: #0d9488;
+      border: 1px solid #ccfbf1;
+      letter-spacing: 0.02em;
+    }
+
+    /* ===== Progress bar ===== */
+    .progress-bar-wrapper {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: #f1f5f9;
+      z-index: 100;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #0d9488, #2563eb);
+      transition: width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    /* ===== Controls ===== */
+    .controls {
+      position: fixed;
+      bottom: 20px;
+      right: 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 100;
+    }
+    .controls button {
+      width: 42px;
+      height: 42px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 18px;
+      display: grid;
+      place-items: center;
+      color: #475569;
+      transition: background 0.2s, border-color 0.2s, transform 0.15s;
+      box-shadow: 0 2px 8px rgba(15,23,42,0.06);
+    }
+    .controls button:hover {
+      background: #f8fafc;
+      border-color: #0d9488;
+      transform: scale(1.06);
+    }
+    .controls button:active { transform: scale(0.96); }
+    .controls .play-btn {
+      width: 48px;
+      height: 48px;
+      background: #0d9488;
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      font-size: 20px;
+    }
+    .controls .play-btn:hover { background: #0f766e; }
+    .controls .slide-counter {
+      font-size: 13px;
+      font-weight: 600;
+      color: #94a3b8;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    /* ===== Decorative line ===== */
+    .deco-line {
+      width: 48px;
+      height: 3px;
+      background: linear-gradient(90deg, #0d9488, #2563eb);
+      border-radius: 2px;
+      margin-bottom: 20px;
+    }
+
+    /* ===== Pulse dot ===== */
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: #0d9488;
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.3); }
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 768px) {
+      .slide { padding: 40px 24px; }
+      .card-grid { grid-template-columns: 1fr; }
+      .arch-flow { flex-direction: column; }
+      .arch-arrow { transform: rotate(90deg); }
+      .stat-grid { grid-template-columns: 1fr; }
+      .controls { right: 16px; bottom: 16px; }
+    }
+
+    /* ===== Two column layout ===== */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      width: 100%;
+      max-width: 960px;
+    }
+    @media (max-width: 768px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    /* ===== Cost table ===== */
+    .cost-table {
+      width: 100%;
+      max-width: 700px;
+      border-collapse: collapse;
+      font-size: 15px;
+    }
+    .cost-table th {
+      text-align: left;
+      font-weight: 600;
+      color: #0f172a;
+      padding: 12px 16px;
+      border-bottom: 2px solid #e2e8f0;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #94a3b8;
+    }
+    .cost-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #334155;
+    }
+    .cost-table tr:last-child td {
+      border-bottom: none;
+      font-weight: 700;
+      color: #0d9488;
+    }
+
+    /* slide specific overrides */
+    .slide-title { text-align: center; }
+    .slide-left-align {
+      align-items: flex-start;
+      padding-left: 10%;
+      padding-right: 10%;
+    }
+  </style>
+</head>
+<body>
+  <div class="presentation" id="presentation">
+
+    <!-- ===== SLIDE 0: TITLE ===== -->
+    <div class="slide active" data-slide="0">
+      <span class="slide-number">Introduction</span>
+      <div class="fade-up kicker">獨立全端開發專案</div>
+      <h1 class="fade-up gradient-text" style="margin-bottom: 20px;">AI YouTube<br>影音知識庫</h1>
+      <p class="fade-up subtitle">用 AI 解決「收藏了 100+ 支影片，但根本沒時間看」的循環矛盾</p>
+      <div class="fade-up badge-row" style="margin-top: 32px;">
+        <span class="badge">Python</span>
+        <span class="badge">Gemini 2.5 Flash</span>
+        <span class="badge">YouTube Data API</span>
+        <span class="badge">React</span>
+        <span class="badge">Tailwind CSS</span>
+        <span class="badge">Vercel</span>
+      </div>
+      <div class="fade-up" style="margin-top: 40px; display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 13px; font-weight: 500;">
+        <span class="pulse-dot"></span>
+        <span>自動播放中⋯ 或按方向鍵操作</span>
+      </div>
+    </div>
+
+    <!-- ===== SLIDE 1: PAIN POINT ===== -->
+    <div class="slide" data-slide="1">
+      <span class="slide-number">01 / 專案緣起</span>
+      <div class="fade-up deco-line"></div>
+      <h2 class="fade-up">我遇到的問題</h2>
+      <ul class="fade-up pain-list">
+        <li>
+          <span class="pain-icon">😵‍💫</span>
+          <div><strong>資訊不透明</strong> — 收藏了上百支 AI 影片，分散在 13 個播放清單，卻無法在觀看前判斷「這支到底值不值得花 30 分鐘看？」</div>
+        </li>
+        <li>
+          <span class="pain-icon">⏳</span>
+          <div><strong>評估成本極高</strong> — 不知道影片有沒有程式碼、有沒有討論成本與延遲⋯想判斷只能親自點進去看完，效率極低。</div>
+        </li>
+        <li>
+          <span class="pain-icon">🔄</span>
+          <div><strong>無效循環</strong> — 結果每天都是滑了 10 分鐘清單後乾脆滑 Threads，陷入「收藏 → 堆積 → 放棄」的死循環。</div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- ===== SLIDE 2: SOLUTION ===== -->
+    <div class="slide" data-slide="2">
+      <span class="slide-number">01 / 專案緣起</span>
+      <div class="fade-up deco-line"></div>
+      <h2 class="fade-up">我的解法</h2>
+      <p class="fade-up subtitle" style="margin-bottom: 36px; text-align: left; max-width: 800px;">
+        用 AI 幫我整理 AI 影片 — 把不可控的學習負擔，<br>變成<strong style="color: #0d9488;">可篩選、可排序、可量化</strong>的個人知識庫。
+      </p>
+      <div class="fade-up card-grid" style="max-width: 760px;">
+        <div class="card">
+          <span class="card-icon">🎯</span>
+          <h3>實用價值</h3>
+          <p>每天看影片前花 10 秒就能判斷「這支值不值得花 30 分鐘」，觀看前即知道落地度、有無 code、生產考量。</p>
+        </div>
+        <div class="card">
+          <span class="card-icon">🧪</span>
+          <h3>技術歷練</h3>
+          <p>作為從石化產業轉 AI 工程的第一個 End-to-End 專案，完整串接 LLM API、Prompt 工程、前端與 CI/CD。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SLIDE 3: FEATURES ===== -->
+    <div class="slide" data-slide="3">
+      <span class="slide-number">01 / 專案緣起</span>
+      <div class="fade-up deco-line"></div>
+      <h2 class="fade-up">每支影片，AI 幫你看完了</h2>
+      <div class="fade-up card-grid" style="grid-template-columns: repeat(3, 1fr); max-width: 900px;">
+        <div class="card" style="text-align: center;">
+          <span class="card-icon">🎯</span>
+          <h3>落地度評分</h3>
+          <p>0–10 分量化指標<br>純概念 vs 照做就能複製</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <span class="card-icon">🏷</span>
+          <h3>內容分類</h3>
+          <p>公司案例 / 實戰教學<br>工具展示 / 理論 / 新聞</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <span class="card-icon">⚙️</span>
+          <h3>生產考量</h3>
+          <p>成本 · 延遲 · 可靠性<br>評估方法 · 失敗案例</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <span class="card-icon">🔍</span>
+          <h3>跨欄位搜尋</h3>
+          <p>搜得到摘要內容<br>也搜得到技術 tag</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <span class="card-icon">📊</span>
+          <h3>三層篩選</h3>
+          <p>資料夾 + 內容類型<br>+ 看過/未看</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <span class="card-icon">🧠</span>
+          <h3>NotebookLM</h3>
+          <p>一鍵跳轉深度研讀<br>影片級 RAG 問答</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SLIDE 4: ARCHITECTURE ===== -->
+    <div class="slide" data-slide="4">
+      <span class="slide-number">02 / 系統架構</span>
+      <div class="fade-up deco-line"></div>
+      <h2 class="fade-up">系統資料流</h2>
+      <div class="fade-up arch-flow">
+        <div class="arch-node">
+          <span class="icon">📺</span>
+          <div class="label">YouTube 播放清單</div>
+          <div class="desc">13 個公開清單</div>
+        </div>
+        <span class="arch-arrow">→</span>
+        <div class="arch-node">
+          <span class="icon">🐍</span>
+          <div class="label">fetch_playlists.py</div>
+          <div class="desc">YouTube Data API v3</div>
+        </div>
+        <span class="arch-arrow">→</span>
+        <div class="arch-node" style="border-color: #0d9488;">
+          <span class="icon">✨</span>
+          <div class="label">summarize.py</div>
+          <div class="desc" style="color: #0d9488; font-weight: 600;">Gemini 2.5 Flash</div>
+        </div>
+        <span class="arch-arrow">→</span>
+        <div class="arch-node">
+          <span class="icon">📄</span>
+          <div class="label">videos.js</div>
+          <div class="desc">結構化 JSON 資料</div>
+        </div>
+        <span class="arch-arrow">→</span>
+        <div class="arch-node">
+          <span class="icon">⚛️</span>
+          <div class="label">React SPA</div>
+          <div class="desc">單檔 + CDN + Tailwind</div>
+        </div>
+        <span class="arch-arrow">→</span>
+        <div class="arch-node">
+          <span class="icon">🚀</span>
+          <div class="label">Vercel</div>
+          <div class="desc">Git Push 自動部署</div>
+        </div>
+      </div>
+      <p class="fade-up" style="margin-top: 28px; font-size: 14px; color: #94a3b8; text-align: center;">
+        Flask Server（server.py）提供 Webhook API，可搭配 n8n 實現全自動排程更新
+      </p>
+    </div>
+
+    <!-- ===== SLIDE 5: TECH 1 - GEMINI ===== -->
+    <div class="slide slide-left-align" data-slide="5">
+      <span class="slide-number">03 / 技術重點</span>
+      <div class="fade-up deco-line"></div>
+      <h2 class="fade-up">Gemini 直接吃 YouTube URL</h2>
+      <p class="fade-up body-text" style="margin-bottom: 28px;">
+        以往要用 AI 摘要影片，需要先寫<strong>字幕爬蟲</strong>、處理無字幕的 <strong>OCR fallback</strong>、甚至接 <strong>Whisper</strong> 做語音識別⋯⋯
+      </p>
+      <div class="fade-up two-col">
+        <div class="tech-card">
+          <h3>❌ 傳統做法</h3>
+          <p>抓字幕 → 清洗 → 斷句 → 送 LLM → 組合結果<br><br>開發成本高、工程鏈脆弱、無字幕影片直接失敗。</p>
+        </div>
+        <div class="tech-card" style="border-left-color: #0d9488; background: #f0fdfa;">
+          <h3>✅ 本專案做法</h3>
+          <p>Gemini 2.5 Flash <span class="highlight">直接接受 YouTube URL</span> 作為多模態輸入，在 Google 後端解讀視聽內容。<br><br><span class="highlight">150 行腳本搞定</span>，每支成本不到 $0.03。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SLIDE 6: TECH 2 - PROMPT ===== -->
+    <div class="slide slide-left-align" data-slide="6">
+      <span class="slide-number">03 / 技術重點</span>
+      <div class="fade-up deco-line"></div>
+      <h2 class="fade-up">嚴格的 Prompt 工程</h2>
+      <p class="fade-up body-text" style="margin-bottom: 24px;">
+        LLM 天生會「討好使用者」— 不加限制，會把所有影片的 production_signals 都判成 true，分數也一律 8+ 分。
+      </p>
+      <div class="fade-up two-col">
+        <div class="tech-card">
+          <h3>💰 生產信號規則</h3>
+          <p>影片必須<span class="highlight">明確花 30 秒以上專門討論</span>該面向（成本、延遲、可靠性⋯），才能標記為 true。<br><br>光提一句或列在投影片 — 一律 <code style="background:#f1f5f9; padding: 2px 6px; border-radius: 4px;">false</code>。</p>
+        </div>
+        <div class="tech-card">
+          <h3>📊 分數天花板</h3>
+          <p>依 content_type 設定上限：<br>
+            · 理論講解 → <span class="highlight">最高 4 分</span><br>
+            · 新聞 → <span class="highlight">最高 2 分</span><br>
+            · 討論雜談 → <span class="highlight">最高 3 分</span><br><br>
+            杜絕 LLM 對純概念影片的灌水。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SLIDE 7: TECH 3 - RESILIENCE ===== -->
+    <div class="slide slide-left-align" data-slide="7">
+      <span class="slide-number">03 / 技術重點</span>
+      <div class="fade-up deco-line"></div>
+      <h2 class="fade-up">斷點續傳與容錯</h2>
+      <div class="fade-up card-grid" style="max-width: 800px; grid-template-columns: 1fr 1fr;">
+        <div class="card">
+          <span class="card-icon">💾</span>
+          <h3>每支立即存檔</h3>
+          <p>每完成一支影片的 AI 摘要，立刻寫入 JSON。中途網路斷、Rate Limit、Ctrl+C 都不會掉資料。再跑時自動跳過已摘要的影片。</p>
+        </div>
+        <div class="card">
+          <span class="card-icon">🛡</span>
+          <h3>超長影片 Fallback</h3>
+          <p>當影片內容超過 Gemini Token 上限，自動降級寫入 Fallback 標記並跳過，避免自動更新管線卡死。</p>
+        </div>
+      </div>
+      <p class="fade-up body-text" style="margin-top: 28px; font-style: italic; color: #94a3b8; text-align: center;">
+        「對長時間任務，失敗能重來 比 不會失敗 更重要。」
+      </p>
+    </div>
+
+    <!-- ===== SLIDE 8: RESULTS ===== -->
+    <div class="slide" data-slide="8">
+      <span class="slide-number">04 / 成果</span>
+      <div class="fade-up deco-line"></div>
+      <h2 class="fade-up">具體成果</h2>
+      <div class="fade-up stat-grid" style="margin-bottom: 36px;">
+        <div class="stat-box">
+          <div class="stat-number teal">47</div>
+          <div class="stat-label">影片已分析</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number blue">$1.27</div>
+          <div class="stat-label">總成本 (USD)</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number dark">~$0.03</div>
+          <div class="stat-label">每支邊際成本</div>
+        </div>
+      </div>
+      <table class="fade-up cost-table">
+        <thead>
+          <tr><th>項目</th><th>用量</th><th style="text-align:right;">成本</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>YouTube Data API</td><td>~50 units / 49 支影片</td><td style="text-align:right;">$0（免費 Quota）</td></tr>
+          <tr><td>Gemini 2.5 Flash</td><td>47 支影片（均長 25 分鐘）</td><td style="text-align:right;">~$1.27</td></tr>
+          <tr><td>Vercel 部署</td><td>Hobby 免費方案</td><td style="text-align:right;">$0</td></tr>
+          <tr><td>總計</td><td></td><td style="text-align:right;">≈ $1.27</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ===== SLIDE 9: LEARNINGS ===== -->
+    <div class="slide slide-left-align" data-slide="9">
+      <span class="slide-number">04 / 學習</span>
+      <div class="fade-up deco-line"></div>
+      <h2 class="fade-up">核心學習</h2>
+      <ol class="fade-up learning-list">
+        <li>
+          <div><strong>LLM 的「客觀性」需要被工程化。</strong><br>不加限制，LLM 會給出討好式的高分。只有嚴格的負向規則與分數天花板，才能產出有決策參考價值的數據。</div>
+        </li>
+        <li>
+          <div><strong>Schema 先行，UI 後設計。</strong><br>花一個下午把 JSON Schema 想清楚，前端的 React state 與篩選邏輯就變得極其輕量，沒有任何 hardcoded 的欄位。</div>
+        </li>
+        <li>
+          <div><strong>選對工具能讓複雜度消失。</strong><br>Gemini 能直接吃 URL 這件事，讓整個字幕爬蟲 + OCR + Whisper 的三天工程直接變成 150 行腳本。</div>
+        </li>
+      </ol>
+    </div>
+
+    <!-- ===== SLIDE 10: END ===== -->
+    <div class="slide" data-slide="10">
+      <span class="slide-number">Thank You</span>
+      <div class="fade-up kicker">AI YouTube 影音知識庫</div>
+      <h1 class="fade-up gradient-text" style="font-size: clamp(32px, 4vw, 52px); margin-bottom: 20px;">感謝觀看</h1>
+      <p class="fade-up subtitle">
+        線上體驗：<a href="https://ai-youtube-collection.vercel.app/" target="_blank" style="color: #0d9488; text-decoration: underline; text-underline-offset: 4px;">ai-youtube-collection.vercel.app</a>
+      </p>
+      <div class="fade-up badge-row" style="margin-top: 28px;">
+        <span class="badge">Python</span>
+        <span class="badge">Gemini 2.5 Flash</span>
+        <span class="badge">React</span>
+        <span class="badge">Vercel</span>
+      </div>
+      <p class="fade-up" style="margin-top: 48px; font-size: 14px; color: #94a3b8;">
+        Heary Lin · 從石化產業到 AI 工程
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="progress-bar-wrapper">
+    <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button id="btnPrev" title="上一頁">←</button>
+    <span class="slide-counter" id="slideCounter">1 / 11</span>
+    <button id="btnNext" title="下一頁">→</button>
+    <button class="play-btn" id="btnPlay" title="自動播放">▶</button>
+  </div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    let currentSlide = 0;
+    let autoplayTimer = null;
+    let isPlaying = false;
+    const AUTOPLAY_INTERVAL = 7000; // 7 seconds per slide
+
+    const progressBar = document.getElementById('progressBar');
+    const slideCounter = document.getElementById('slideCounter');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const btnPlay = document.getElementById('btnPlay');
+
+    function updateProgress() {
+      const pct = ((currentSlide + 1) / totalSlides) * 100;
+      progressBar.style.width = pct + '%';
+      slideCounter.textContent = `${currentSlide + 1} / ${totalSlides}`;
+    }
+
+    function goToSlide(index) {
+      if (index < 0 || index >= totalSlides || index === currentSlide) return;
+
+      // Remove active/exit classes from all
+      slides.forEach(s => {
+        s.classList.remove('active', 'exit');
+        // Reset fade-up children
+        s.querySelectorAll('.fade-up').forEach(el => {
+          el.style.animation = 'none';
+          el.offsetHeight; // force reflow
+          el.style.animation = '';
+          el.style.opacity = '0';
+          el.style.transform = 'translateY(18px)';
+        });
+      });
+
+      // Exit current
+      slides[currentSlide].classList.add('exit');
+
+      // Activate new
+      currentSlide = index;
+      slides[currentSlide].classList.add('active');
+      updateProgress();
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) {
+        goToSlide(currentSlide + 1);
+      } else {
+        stopAutoplay();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        goToSlide(currentSlide - 1);
+      }
+    }
+
+    function startAutoplay() {
+      if (isPlaying) return;
+      isPlaying = true;
+      btnPlay.textContent = '⏸';
+      btnPlay.title = '暫停';
+      autoplayTimer = setInterval(() => {
+        if (currentSlide < totalSlides - 1) {
+          nextSlide();
+        } else {
+          stopAutoplay();
+        }
+      }, AUTOPLAY_INTERVAL);
+    }
+
+    function stopAutoplay() {
+      isPlaying = false;
+      btnPlay.textContent = '▶';
+      btnPlay.title = '自動播放';
+      if (autoplayTimer) {
+        clearInterval(autoplayTimer);
+        autoplayTimer = null;
+      }
+    }
+
+    function toggleAutoplay() {
+      isPlaying ? stopAutoplay() : startAutoplay();
+    }
+
+    // Event listeners
+    btnPrev.addEventListener('click', () => { stopAutoplay(); prevSlide(); });
+    btnNext.addEventListener('click', () => { stopAutoplay(); nextSlide(); });
+    btnPlay.addEventListener('click', toggleAutoplay);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); stopAutoplay(); nextSlide(); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); stopAutoplay(); prevSlide(); }
+      if (e.key === 'p' || e.key === 'P') { toggleAutoplay(); }
+    });
+
+    // Initialize
+    updateProgress();
+
+    // Auto-start after 2 seconds
+    setTimeout(() => {
+      startAutoplay();
+    }, 2000);
+  </script>
+</body>
+</html>

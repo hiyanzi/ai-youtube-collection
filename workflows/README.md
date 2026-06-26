@@ -1,173 +1,127 @@
 # n8n 自動更新流程
 
-這個資料夾放的是可以匯入 n8n 的自動化流程，用來自動更新「AI YouTube 影片收藏網站」。
+這個資料夾放的是「AI YouTube 影片收藏網站」的 n8n 自動更新流程。
 
-## 檔案說明
+## 目前 Docker 架構
 
-- `n8n-youtube-auto-update.json`：Windows 本機版 n8n 使用。
-- `n8n-youtube-auto-update-docker.json`：Docker 版 n8n 使用。你的 n8n 架在本機 Docker，所以請用這個。
-
-## 這個流程會做什麼
-
-每 6 小時自動執行一次：
-
-1. 進入網站專案資料夾。
-2. 執行 `git pull --ff-only`，先同步 GitHub 最新版本。
-3. 安裝或確認 Python 套件。
-4. 執行 `scripts/fetch_playlists.py`，重新抓 YouTube 播放清單。
-5. 執行 `scripts/summarize.py`，替新影片產生 AI 摘要與標籤。
-6. 如果 `config.json` 或 `data/videos.js` 有真正內容變更，就自動 commit 並 push 到 GitHub。
-7. GitHub 更新後，Vercel 會自動重新部署網站。
-
-`generated_at` 時間戳造成的單純時間變更會被忽略，避免沒有新影片時也一直產生 commit。
-
-## Docker 版 n8n 設定方式
-
-Docker 裡的 n8n 看不到 Windows 這種路徑：
+目前 Docker 版不使用 n8n 的 `Execute Command` 節點，因為目前這套 n8n 版本會回報：
 
 ```text
-C:\Claude專案\AI影片收藏網站\AI Youtube影片收藏網站
+Unrecognized node type: n8n-nodes-base.executeCommand
 ```
 
-所以你要把 Windows 的專案資料夾掛載到 n8n container 裡。
+改用兩個 container：
 
-請在 n8n 匯入這個檔案：
+- `n8n`：負責排程，每 12 小時觸發一次。
+- `youtube-updater`：Flask 服務，接收 n8n 的 HTTP POST，實際執行 YouTube 抓取、Gemini 摘要、git commit、git push。
+
+n8n workflow 會呼叫：
 
 ```text
-workflows/n8n-youtube-auto-update-docker.json
+http://youtube-updater:5000/trigger-update
 ```
 
-`docker-compose.yml` 範例：
+## Workflow 檔案
 
-```yaml
-services:
-  n8n:
-    image: n8nio/n8n:latest
-    ports:
-      - "5678:5678"
-    environment:
-      - TZ=Asia/Taipei
-      - PROJECT_DIR=/workspace/ai-youtube-collection
-    volumes:
-      - n8n_data:/home/node/.n8n
-      - "C:/Claude專案/AI影片收藏網站/AI Youtube影片收藏網站:/workspace/ai-youtube-collection"
+- `n8n-youtube-auto-update-docker.json`：目前 Docker 版 workflow，使用 HTTP Request node。
+- `n8n-youtube-auto-update.json`：舊 Windows/本機版，仍含 Execute Command node，不適合目前這台 Docker n8n。
 
-volumes:
-  n8n_data:
-```
+## 更新流程
 
-掛載後，Windows 裡的：
+每 12 小時會：
 
-```text
-C:\Claude專案\AI影片收藏網站\AI Youtube影片收藏網站
-```
+1. n8n 觸發 HTTP Request。
+2. `youtube-updater` 執行 `git pull --ff-only`。
+3. 執行 `scripts/fetch_playlists.py`。
+4. 執行 `scripts/summarize.py`。
+5. 如果只有 `generated_at` 或行尾差異，回傳 `NO_CHANGES`，不 commit。
+6. 如果影片資料真的有更新，commit 並 push 到 GitHub。
+7. GitHub push 後由 Vercel 自動部署。
 
-在 n8n container 裡會變成：
+## Docker Compose 重點
 
-```text
-/workspace/ai-youtube-collection
-```
-
-匯入 workflow 後，打開 `Fetch, Summarize, Commit, Push` 節點，確認裡面的專案路徑是：
-
-```sh
-PROJECT_DIR="${PROJECT_DIR:-/workspace/ai-youtube-collection}"
-```
-
-## Docker 容器需要有的工具
-
-這個流程需要 n8n container 裡有以下指令：
-
-- `git`
-- `python3`
-- `pip`
-
-如果執行 workflow 時出現這些錯誤：
-
-```text
-git: not found
-python3: not found
-pip: not found
-```
-
-代表官方 n8n Docker image 裡缺少工具。建議建立自訂 Docker image。
-
-新增一個 `Dockerfile`：
-
-```dockerfile
-FROM n8nio/n8n:latest
-
-USER root
-RUN apk add --no-cache git python3 py3-pip
-USER node
-```
-
-然後把 `docker-compose.yml` 改成：
+`docker-compose.yml` 需要有兩個 service：
 
 ```yaml
 services:
   n8n:
     build: .
+    container_name: n8n
     ports:
       - "5678:5678"
-    environment:
-      - TZ=Asia/Taipei
-      - PROJECT_DIR=/workspace/ai-youtube-collection
     volumes:
       - n8n_data:/home/node/.n8n
       - "C:/Claude專案/AI影片收藏網站/AI Youtube影片收藏網站:/workspace/ai-youtube-collection"
 
-volumes:
-  n8n_data:
+  youtube-updater:
+    build: .
+    container_name: youtube-updater
+    working_dir: /workspace/ai-youtube-collection
+    entrypoint: ["/usr/local/bin/python3"]
+    command: ["/workspace/ai-youtube-collection/server.py"]
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - "C:/Claude專案/AI影片收藏網站/AI Youtube影片收藏網站:/workspace/ai-youtube-collection"
 ```
 
-接著重新啟動 n8n：
+`youtube-updater` 不需要對外開 port，只需要讓 n8n 在 Docker 內網呼叫。
+
+## 必要檢查
+
+確認 container：
 
 ```sh
-docker compose up -d --build
+docker ps
 ```
 
-## GitHub 推送權限
-
-n8n container 裡也需要能夠 push 到 GitHub。
-
-最簡單的方式是用 HTTPS 加 GitHub Personal Access Token，或是把 SSH key 掛進 container。
-
-正式啟用 workflow 前，建議先進入 n8n container 測試：
+確認 n8n 可以呼叫 updater：
 
 ```sh
-cd /workspace/ai-youtube-collection
-git status
-git pull --ff-only
-git push
+docker exec n8n wget -q -O - http://youtube-updater:5000/healthz
 ```
 
-如果這三個指令都能成功，n8n 自動更新就比較穩。
-
-## 專案 `.env` 設定
-
-專案根目錄需要有 `.env`，裡面至少要有：
-
-```env
-YOUTUBE_API_KEY=你的 YouTube API Key
-GEMINI_API_KEY=你的 Gemini API Key
-```
-
-`YOUTUBE_API_KEY` 是抓 YouTube 播放清單必要的。
-
-`GEMINI_API_KEY` 是產生 AI 摘要與標籤用的。如果你暫時不想自動產生摘要，可以把 workflow 裡的這一行刪掉：
+手動測試更新：
 
 ```sh
-python3 scripts/summarize.py
+docker exec n8n wget -S -O - --timeout=300 --post-data= http://youtube-updater:5000/trigger-update
 ```
 
-## YouTube 收藏限制
+成功時會回：
 
-YouTube 私人的「喜歡的影片」或「稍後觀看」通常不能只靠 API key 自動讀取。
+```json
+{"status":"success","stdout":"NO_CHANGES"}
+```
 
-建議做法是：
+或：
 
-1. 建立一個公開或不公開的 YouTube 播放清單。
-2. 把想放到網站的新影片加入那個播放清單。
-3. 確認該播放清單網址有放在 `config.json` 的 `playlists` 裡。
-4. n8n workflow 就會定時抓取，並自動更新網站。
+```json
+{"status":"success","stdout":"UPDATED"}
+```
+
+## 常見錯誤
+
+### `Unrecognized node type: n8n-nodes-base.executeCommand`
+
+表示 workflow 仍使用舊的 Execute Command node。請匯入目前的 `n8n-youtube-auto-update-docker.json`，或確認 n8n 內的 HTTP Request URL 是：
+
+```text
+http://youtube-updater:5000/trigger-update
+```
+
+### `Connection refused`
+
+表示 `youtube-updater` 沒有啟動，或 n8n workflow 還在打舊 URL：
+
+```text
+http://host.docker.internal:5000/trigger-update
+```
+
+目前正確 URL 是：
+
+```text
+http://youtube-updater:5000/trigger-update
+```
+
+### YouTube 播放清單找不到
+
+通常是播放清單是私人、已刪除，或 API key 無法讀取。請確認 `config.json` 內的 playlist 是公開或不公開但可讀取。

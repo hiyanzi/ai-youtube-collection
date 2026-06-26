@@ -1,150 +1,198 @@
-{
-  "name": "Auto update AI YouTube collection Docker",
-  "nodes": [
-    {
-      "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "hours",
-              "hoursInterval": 6
-            }
-          ]
-        }
-      },
-      "id": "e5a817c4-1dbb-42c7-8d88-dd8be31633a1",
-      "name": "Every 6 Hours",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [
-        240,
-        300
-      ]
-    },
-    {
-      "parameters": {
-        "command": "set -eu\nPROJECT_DIR=\"${PROJECT_DIR:-/workspace/ai-youtube-collection}\"\ngit config --global --add safe.directory \"$PROJECT_DIR\" || true\ngit config --global user.name \"n8n Auto Update\"\ngit config --global user.email \"n8n@roylin1985.com\"\ncd \"$PROJECT_DIR\"\ngit pull --ff-only\npython3 -m pip install -r requirements.txt\npython3 scripts/fetch_playlists.py\npython3 scripts/summarize.py\nif git diff --quiet --ignore-space-at-eol -I '^(// Auto-generated|[[:space:]]*\"generated_at\":)' -- config.json data/videos.js; then\n  git restore config.json data/videos.js\n  echo \"NO_CHANGES\"\n  exit 0\nfi\ngit add config.json data/videos.js\ngit commit -m \"Auto update YouTube video collection\"\ngit push\necho \"UPDATED\""
-      },
-      "id": "99f8467e-2938-4f03-95a5-7233f40593c3",
-      "name": "Fetch, Summarize, Commit, Push",
-      "type": "n8n-nodes-base.executeCommand",
-      "typeVersion": 1,
-      "position": [
-        500,
-        300
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": false,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "conditions": [
-            {
-              "id": "e0c1a6f9-a3ad-4bda-a0d8-4ba2eda42e89",
-              "leftValue": "={{ $json.stdout }}",
-              "rightValue": "UPDATED",
-              "operator": {
-                "type": "string",
-                "operation": "contains"
+[
+  {
+    "updatedAt": "2026-06-03T06:24:18.000Z",
+    "createdAt": "2026-05-27T16:43:03.884Z",
+    "id": "5BQIeZaLxyjhQGxX",
+    "name": "Auto update AI YouTube collection Docker",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "e0c1a6f9-a3ad-4bda-a0d8-4ba2eda42e89",
+                "leftValue": "={{ $json.stdout }}",
+                "rightValue": "UPDATED",
+                "operator": {
+                  "type": "string",
+                  "operation": "contains"
+                }
               }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "1770dd90-d9d5-42e3-9ea5-175691745d65",
+        "name": "Was Updated?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -320,
+          144
+        ]
+      },
+      {
+        "parameters": {
+          "url": "https://ai-youtube-collection.vercel.app/",
+          "options": {}
+        },
+        "id": "4961978d-6ef8-4602-9628-9ee28596926c",
+        "name": "Check Website",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          0,
+          32
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "return [{ json: { status: 'No new playlist changes detected.' } }];"
+        },
+        "id": "c3815761-0848-484a-b753-8ca218e95338",
+        "name": "No Changes",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          0,
+          240
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://youtube-updater:5000/trigger-update",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          -544,
+          144
+        ],
+        "id": "305d789a-ed5a-405e-9cf7-fb4b0850950a",
+        "name": "HTTP Request"
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "hours",
+                "hoursInterval": 12
+              }
+            ]
+          }
+        },
+        "id": "a06fae00-d69b-4a59-b3cf-171e9366ab00",
+        "name": "Every 12 Hours",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          -800,
+          144
+        ]
+      }
+    ],
+    "connections": {
+      "Was Updated?": {
+        "main": [
+          [
+            {
+              "node": "Check Website",
+              "type": "main",
+              "index": 0
             }
           ],
-          "combinator": "and"
-        },
-        "options": {}
+          [
+            {
+              "node": "No Changes",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       },
-      "id": "ec371a66-8856-47c0-bfb7-444a8bd9112d",
-      "name": "Was Updated?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        760,
-        300
-      ]
+      "HTTP Request": {
+        "main": [
+          [
+            {
+              "node": "Was Updated?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Every 12 Hours": {
+        "main": [
+          [
+            {
+              "node": "HTTP Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
     },
-    {
-      "parameters": {
-        "url": "https://ai-youtube-collection.vercel.app/",
-        "options": {}
-      },
-      "id": "ae6a30f3-f00e-4433-8356-c61c68958f7f",
-      "name": "Check Website",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1020,
-        200
-      ]
+    "settings": {
+      "executionOrder": "v1",
+      "binaryMode": "separate",
+      "timeSavedMode": "fixed",
+      "timezone": "Asia/Taipei",
+      "callerPolicy": "workflowsFromSameOwner",
+      "availableInMCP": false
     },
-    {
-      "parameters": {
-        "jsCode": "return [{ json: { status: 'No new playlist changes detected.' } }];"
+    "staticData": {
+      "node:Every 6 Hours": {
+        "recurrenceRules": []
       },
-      "id": "98de2597-9c6e-4f21-b934-1c12eaebde02",
-      "name": "No Changes",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1020,
-        400
-      ]
+      "node:Every 12 Hours": {
+        "recurrenceRules": [
+          12
+        ]
+      }
+    },
+    "meta": null,
+    "pinData": {},
+    "versionId": "068d8c42-aa9e-463d-9b2a-d197b46abc31",
+    "activeVersionId": "068d8c42-aa9e-463d-9b2a-d197b46abc31",
+    "versionCounter": 64,
+    "triggerCount": 1,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-05-27T16:43:03.887Z",
+        "createdAt": "2026-05-27T16:43:03.887Z",
+        "role": "workflow:owner",
+        "workflowId": "5BQIeZaLxyjhQGxX",
+        "projectId": "RwpeRMzIhFZ2HYrM",
+        "project": {
+          "updatedAt": "2026-05-08T03:44:54.310Z",
+          "createdAt": "2026-05-08T03:43:17.601Z",
+          "id": "RwpeRMzIhFZ2HYrM",
+          "name": "Lin Desiang <hiyanzis@gmail.com>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "c91f10d0-2931-4f89-ab6b-40099af9dc76"
+        }
+      }
+    ],
+    "versionMetadata": {
+      "name": null,
+      "description": null
     }
-  ],
-  "pinData": {},
-  "connections": {
-    "Every 6 Hours": {
-      "main": [
-        [
-          {
-            "node": "Fetch, Summarize, Commit, Push",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Fetch, Summarize, Commit, Push": {
-      "main": [
-        [
-          {
-            "node": "Was Updated?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Was Updated?": {
-      "main": [
-        [
-          {
-            "node": "Check Website",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "No Changes",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
-  },
-  "active": false,
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "versionId": "b3ec2e9d-1fd4-4fc5-b317-d6cf78ff1392",
-  "meta": {
-    "templateCredsSetupCompleted": true
-  },
-  "id": "auto-update-ai-youtube-collection-docker",
-  "tags": []
-}
+  }
+]
